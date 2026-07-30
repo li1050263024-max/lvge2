@@ -253,10 +253,10 @@
       
       <div class="summary-toolbar card section">
         <h2>内容总结 · 发布</h2>
-        <p class="sub">点「写入并推送到 GitHub」会保存总结、重建看板，并自动更新公开链接（需在 .env 配置 GITHUB_TOKEN）。</p>
+        <p class="sub">本地服务下会自动写入项目根目录 <code>summaries.json</code>；点推送会同步到 GitHub 公开链接。</p>
         <div class="summary-toolbar-actions">
           <button type="button" id="summary-publish-btn" class="primary-btn">写入并推送到 GitHub</button>
-          <button type="button" id="summary-export-btn" class="chip">导出 JSON</button>
+          <button type="button" id="summary-save-root-btn" class="chip">保存到项目根目录</button>
           <button type="button" id="summary-import-btn" class="chip">导入 JSON</button>
           <input type="file" id="summary-import-file" accept="application/json,.json" hidden />
         </div>
@@ -1992,7 +1992,7 @@
 
   </div>
   <script>
-  window.__DASHBOARD_SUMMARIES__ = {};
+  window.__DASHBOARD_SUMMARIES__ = {"mode-compare": "1.到第五章时，续写章节的创建留存为ai章节的1.7倍，证明续写功能对章节创建有较为显著的提升，\n2.到第五章时，续写的发布留存和ai章节的发布留存一致，证明多出来的那部分创建章节并没有选择发布。"};
   (function () {
     var tabs = document.querySelectorAll(".top-tabs .tab");
     tabs.forEach(function (tab) {
@@ -2080,19 +2080,40 @@
         });
       }
 
-      function downloadJson(obj) {
-        var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
-        var a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "summaries.json";
-        a.click();
-        URL.revokeObjectURL(a.href);
+      function postSummaries(payload, opts) {
+        opts = opts || {};
+        var body = Object.assign({}, payload);
+        if (opts.saveOnly) body.save_only = true;
+        if (opts.push === false) body.push = false;
+        return fetch(apiBase() + "/api/summaries", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        }).then(function (r) {
+          return r.json().then(function (data) {
+            return { okHttp: r.ok, data: data };
+          });
+        });
       }
 
-      document.querySelectorAll("#summary-export-btn").forEach(function (btn) {
+      document.querySelectorAll("#summary-save-root-btn").forEach(function (btn) {
         btn.addEventListener("click", function () {
-          downloadJson(collect());
-          setPublishMsg("已导出 summaries.json", "ok");
+          var base = apiBase();
+          if (!base) {
+            setPublishMsg("请先运行 python scripts/serve.py，再用 http://127.0.0.1:8765/ 打开看板", "err");
+            return;
+          }
+          btn.disabled = true;
+          setPublishMsg("正在保存到项目根目录…", "");
+          postSummaries(collect(), { saveOnly: true })
+            .then(function (res) {
+              if (!res.data || !res.data.ok) throw new Error((res.data && res.data.error) || "保存失败");
+              setPublishMsg(res.data.message || "已保存到根目录 summaries.json", "ok");
+            })
+            .catch(function (err) {
+              setPublishMsg((err && err.message) || "保存失败", "err");
+            })
+            .finally(function () { btn.disabled = false; });
         });
       });
 
@@ -2121,7 +2142,19 @@
                   try { localStorage.setItem(PREFIX + key, input.value); } catch (e) {}
                 }
               });
-              setPublishMsg("已导入，请再点「写入公开站」", "ok");
+              var base = apiBase();
+              if (base) {
+                postSummaries(collect(), { saveOnly: true })
+                  .then(function (res) {
+                    if (!res.data || !res.data.ok) throw new Error((res.data && res.data.error) || "保存失败");
+                    setPublishMsg("已导入并写入根目录 summaries.json", "ok");
+                  })
+                  .catch(function (err) {
+                    setPublishMsg("已导入到页面，但写根目录失败：" + ((err && err.message) || ""), "err");
+                  });
+              } else {
+                setPublishMsg("已导入到页面。请用本地服务打开后点「保存到项目根目录」", "ok");
+              }
             } catch (e) {
               setPublishMsg("导入失败：JSON 无效", "err");
             }
@@ -2136,25 +2169,15 @@
           var payload = collect();
           var base = apiBase();
           if (!base) {
-            downloadJson(payload);
             setPublishMsg(
-              "当前不是本地服务。已导出 summaries.json：请放到项目根目录，运行 python scripts/build_dashboard.py 后重新上传 docs/index.html",
+              "请先运行 python scripts/serve.py，再用 http://127.0.0.1:8765/ 打开，才能自动写入根目录并推送",
               "err"
             );
             return;
           }
           btn.disabled = true;
-          setPublishMsg("正在写入总结并重建看板…", "");
-          fetch(base + "/api/summaries", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          })
-            .then(function (r) {
-              return r.json().then(function (data) {
-                return { okHttp: r.ok, data: data };
-              });
-            })
+          setPublishMsg("正在写入根目录并推送到 GitHub…", "");
+          postSummaries(payload, { push: true })
             .then(function (res) {
               if (!res.data || !res.data.ok) {
                 throw new Error((res.data && res.data.error) || "写入失败");
