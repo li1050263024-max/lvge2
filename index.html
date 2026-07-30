@@ -242,10 +242,10 @@
     <div class="main">
       <div class="hero">
         <h1>续写 · 前五章阶段转化看板</h1>
-        <p>转化漏斗与三种书籍收入对比。数据源：续写书籍总表 / AI书籍总表 / 全站新书收入 / 续写书收入 / AI书收入 / 续写模式 / ai模式。</p>
+        <p>转化漏斗与三种书籍收入对比。数据源：续写书籍总表 / AI书籍总表 / 全站新书收入 / 续写书收入 / AI书收入 / 续写章节点击次数 / 续写模式 / ai模式。</p>
         <div class="meta">
-          更新时间 2026-07-30T14:10:09
-          · 同页展示 7 个数据源
+          更新时间 2026-07-30T16:34:39
+          · 同页展示 8 个数据源
            · 执行窗口 2026-07-22~2026-07-29
         </div>
       </div>
@@ -1024,6 +1024,123 @@
 
 
 
+      <section class="dataset-block" id="chapter_clicks">
+        <div class="dataset-head">
+          <h2 class="dataset-title">续写章节点击次数</h2>
+          <div class="meta">用户×书×章 续写点击明细；「用满」阈值 ≥30 次。未改写：该 SQL 无 createTime/create_time 时间窗（全量口径） · 行数 3,303</div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi create">
+            <div class="val">3,303</div>
+            <div class="lab">用户×章节记录数</div>
+          </div>
+          <div class="kpi">
+            <div class="val">1,519</div>
+            <div class="lab">用户数</div>
+          </div>
+          <div class="kpi">
+            <div class="val">2,357</div>
+            <div class="lab">书籍数</div>
+          </div>
+          <div class="kpi publish">
+            <div class="val">586 · 17.7%</div>
+            <div class="lab">用满≥30次 / 占比</div>
+          </div>
+        </div>
+        <div class="kpis" style="margin-top:12px">
+          <div class="kpi">
+            <div class="val">11.20</div>
+            <div class="lab">平均点击续写次数</div>
+          </div>
+          <div class="kpi">
+            <div class="val">7.00</div>
+            <div class="lab">中位点击续写次数</div>
+          </div>
+          <div class="kpi">
+            <div class="val">30</div>
+            <div class="lab">最高点击续写次数</div>
+          </div>
+          <div class="kpi">
+            <div class="val">3,303</div>
+            <div class="lab">章节数（书×章）</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h2>点击次数分档</h2>
+            <p class="sub">按「用户×章节」记录的点击续写次数分档。</p>
+            
+            <div class="bar-row">
+              <div class="bar-label">1次</div>
+              <div class="bar-track"><div class="bar-fill create" style="width:85%"></div></div>
+              <div class="bar-meta"><strong>629</strong></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">2-5次</div>
+              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
+              <div class="bar-meta"><strong>743</strong></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">6-10次</div>
+              <div class="bar-track"><div class="bar-fill create" style="width:90%"></div></div>
+              <div class="bar-meta"><strong>668</strong></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">11-29次</div>
+              <div class="bar-track"><div class="bar-fill create" style="width:91%"></div></div>
+              <div class="bar-meta"><strong>677</strong></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">≥30次</div>
+              <div class="bar-track"><div class="bar-fill create" style="width:79%"></div></div>
+              <div class="bar-meta"><strong>586</strong></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>书籍 Top20（按点击合计）</h2>
+            <p class="sub">同一书下所有用户×章节点击之和。</p>
+            <table>
+              <thead><tr><th>#</th><th>书名</th><th>记录数</th><th>点击合计</th></tr></thead>
+              <tbody><tr><td>1</td><td>装十八线我撩爆顶流</td><td>4</td><td>91</td></tr><tr><td>2</td><td>我和马嘉祺官宣结婚了</td><td>3</td><td>90</td></tr><tr><td>3</td><td>留英千金她自带零食库</td><td>3</td><td>90</td></tr><tr><td>4</td><td>伪装十八线闪婚顶流老板</td><td>3</td><td>90</td></tr><tr><td>5</td><td>我装糊咖前对象是大佬</td><td>3</td><td>90</td></tr><tr><td>6</td><td>十八线糊豆竟是我隐婚对象</td><td>3</td><td>90</td></tr><tr><td>7</td><td>病弱学霸他万人迷</td><td>3</td><td>90</td></tr><tr><td>8</td><td>替身是他丢弃的另一半</td><td>3</td><td>90</td></tr><tr><td>9</td><td>我醒后变小了大佬们都懵了</td><td>3</td><td>90</td></tr><tr><td>10</td><td>书名正在修改1785397607307286380</td><td>3</td><td>90</td></tr><tr><td>11</td><td>成团后他反撩前队友</td><td>3</td><td>90</td></tr><tr><td>12</td><td>退隐影帝恋上糊咖-d219</td><td>3</td><td>90</td></tr><tr><td>13</td><td>领结婚证后我马甲掉了</td><td>3</td><td>90</td></tr><tr><td>14</td><td>我当十八线前夫求领证</td><td>3</td><td>90</td></tr><tr><td>15</td><td>假联姻后我们都动心了</td><td>3</td><td>90</td></tr><tr><td>16</td><td>嫁入军营后竹马疯魔了-d409</td><td>3</td><td>90</td></tr><tr><td>17</td><td>嫁入军营后竹马疯了-d226</td><td>3</td><td>90</td></tr><tr><td>18</td><td>同居三年他说没领证</td><td>3</td><td>90</td></tr><tr><td>19</td><td>我嫁营长，竹马强取豪夺-d474</td><td>3</td><td>90</td></tr><tr><td>20</td><td>我假死逃会，好友追到美国</td><td>3</td><td>90</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card section">
+          <h2>点击明细（按次数降序，最多 200 行）</h2>
+          <p class="sub">字段来自 SQLPad「续写章节点击次数」。</p>
+          <div style="overflow:auto">
+            <table>
+              <thead><tr><th>用户ID</th><th>书籍ID</th><th>书名</th><th>章节ID</th><th>章节标题</th><th>点击续写次数</th><th>是否用满30次</th></tr></thead>
+              <tbody><tr><td>135134680</td><td>15419820</td><td>他冷得结冰只暖他</td><td>88841104</td><td>相遇</td><td>30</td><td>是</td></tr><tr><td>135134680</td><td>15419820</td><td>他冷得结冰只暖他</td><td>88841712</td><td>相爱</td><td>30</td><td>是</td></tr><tr><td>135092093</td><td>15419562</td><td>我和马嘉祺官宣结婚了</td><td>88839844</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135092093</td><td>15419562</td><td>我和马嘉祺官宣结婚了</td><td>88839519</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135092093</td><td>15419562</td><td>我和马嘉祺官宣结婚了</td><td>88839168</td><td>第1章 嘉宾名单炸了热搜</td><td>30</td><td>是</td></tr><tr><td>134853714</td><td>15419382</td><td>留英千金她自带零食库</td><td>88842060</td><td>第3卷</td><td>30</td><td>是</td></tr><tr><td>134853714</td><td>15419382</td><td>留英千金她自带零食库</td><td>88841392</td><td>第2卷</td><td>30</td><td>是</td></tr><tr><td>134853714</td><td>15419382</td><td>留英千金她自带零食库</td><td>88838798</td><td>饿</td><td>30</td><td>是</td></tr><tr><td>135123446</td><td>15419349</td><td>穿进怪谈我攻略七个Boss</td><td>88838714</td><td>第1章 刚穿就撞规则红线</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15419278</td><td>伪装十八线闪婚顶流老板</td><td>88839060</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15419278</td><td>伪装十八线闪婚顶流老板</td><td>88839551</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15419278</td><td>伪装十八线闪婚顶流老板</td><td>88838554</td><td>第1章 雪藏三年还敢和资本大佬相亲？</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15418654</td><td>我装糊咖前对象是大佬</td><td>88837705</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15418654</td><td>我装糊咖前对象是大佬</td><td>88837058</td><td>第1章 前任空降成老板</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15418654</td><td>我装糊咖前对象是大佬</td><td>88838124</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15417954</td><td>十八线糊豆竟是我隐婚对象</td><td>88835355</td><td>第1章 解约协议甩到资本脸上</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15417954</td><td>十八线糊豆竟是我隐婚对象</td><td>88836062</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15417954</td><td>十八线糊豆竟是我隐婚对象</td><td>88836727</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135125041</td><td>15417794</td><td>病弱学霸他万人迷</td><td>88834937</td><td>第1章 开学日拦路</td><td>30</td><td>是</td></tr><tr><td>135125041</td><td>15417794</td><td>病弱学霸他万人迷</td><td>88837813</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135125041</td><td>15417794</td><td>病弱学霸他万人迷</td><td>88837335</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135125041</td><td>15417419</td><td>我体弱却被团宠了-d446</td><td>88834083</td><td>第1章 报到晕在校门口</td><td>30</td><td>是</td></tr><tr><td>135125041</td><td>15416799</td><td>我是乡下来的，全豪门都宠我-d411</td><td>88832580</td><td>第1章 报到第一天就被围了</td><td>30</td><td>是</td></tr><tr><td>134984895</td><td>15416743</td><td>我装温顺他步步紧逼</td><td>88832362</td><td>第1章 递错的热美式</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15416436</td><td>我是懒羊羊天天离家走</td><td>88831561</td><td>第1章 刚穿来就被七个爹妈围堵</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15416234</td><td>穿成懒羊羊我闯五灵界</td><td>88831076</td><td>第1章 刚落地就被邀组队？溜了溜了</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15416124</td><td>我穿成懒羊羊被全家追</td><td>88841310</td><td>逃离父母第二季</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15416124</td><td>我穿成懒羊羊被全家追</td><td>88841806</td><td>第三集逃离喜羊羊和美羊羊</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15416080</td><td>替身是他丢弃的另一半</td><td>88832385</td><td>第三章</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15416080</td><td>替身是他丢弃的另一半</td><td>88831244</td><td>第二章</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15416080</td><td>替身是他丢弃的另一半</td><td>88830561</td><td>第1章 找个和他一模一样的人</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15415951</td><td>我穿成懒羊羊全家宠我</td><td>88842420</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135102106</td><td>15415939</td><td>我是凡女世王寻妻千年</td><td>88830250</td><td>第1章 幕天印碎了</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15415691</td><td>我是懒羊羊爸妈遍地走</td><td>88829514</td><td>第1章 睁眼多了十个爹八个妈</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15415691</td><td>我是懒羊羊爸妈遍地走</td><td>88829831</td><td>逃离亲人第一集</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15415554</td><td>我是海绵宝宝爸妈是羊村高层</td><td>88828996</td><td>第1章 刚收蟹堡王工资就被堵门</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15415418</td><td>我妈失忆后成伐木工</td><td>88828526</td><td>第1章 我亲妈是砍树的？</td><td>30</td><td>是</td></tr><tr><td>132750489</td><td>15415350</td><td>我当家教被大佬倒追</td><td>88828364</td><td>第1章 第一次上课就被整？</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15415289</td><td>嫁营长后我被竹马欺瞒-d137</td><td>88828187</td><td>第1章 敲门声</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15415289</td><td>嫁营长后我被竹马欺瞒-d137</td><td>88832499</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15415282</td><td>我随军妻，他踏血归-d779</td><td>88828147</td><td>第1章 雪夜门响</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15415271</td><td>我醒后变小了大佬们都懵了</td><td>88828355</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15415271</td><td>我醒后变小了大佬们都懵了</td><td>88828110</td><td>第1章 会议室炸了</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15415271</td><td>我醒后变小了大佬们都懵了</td><td>88828608</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15415196</td><td>书名正在修改1785397607307286380</td><td>88827921</td><td>捡贝壳</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15415196</td><td>书名正在修改1785397607307286380</td><td>88827773</td><td>呜呜呜</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15415196</td><td>书名正在修改1785397607307286380</td><td>88827972</td><td>丁哥</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15415042</td><td>成团后他反撩前队友</td><td>88827588</td><td>张真源的手机</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15415042</td><td>成团后他反撩前队友</td><td>88827518</td><td>严浩翔和丁程鑫</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15415042</td><td>成团后他反撩前队友</td><td>88827369</td><td>留学</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15414981</td><td>我扮实习生他是总裁</td><td>88827230</td><td>减肥</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15414763</td><td>穿成艾格妮丝我嫁焰王-d080</td><td>88826753</td><td>第1章 撕婚约当场嫁焰王</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15414763</td><td>穿成艾格妮丝我嫁焰王-d080</td><td>88826811</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15414677</td><td>穿成月之星我带崽炸萌学园-d044</td><td>88826543</td><td>第1章 怀里揣了个小焰王</td><td>30</td><td>是</td></tr><tr><td>62696495</td><td>15414560</td><td>前队友闯入龙境后</td><td>88826559</td><td>第二章突然出现的盗墓者</td><td>30</td><td>是</td></tr><tr><td>62696495</td><td>15414560</td><td>前队友闯入龙境后</td><td>88826563</td><td>第三章神秘人</td><td>30</td><td>是</td></tr><tr><td>135055397</td><td>15414251</td><td>我是十八线，爆红娱乐圈</td><td>88825984</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135055397</td><td>15414251</td><td>我是十八线，爆红娱乐圈</td><td>88826216</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15413185</td><td>退隐影帝恋上糊咖-d219</td><td>88822291</td><td>第1章 综艺后台的狭路相逢</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15413185</td><td>退隐影帝恋上糊咖-d219</td><td>88823820</td><td>第二章</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15413185</td><td>退隐影帝恋上糊咖-d219</td><td>88824981</td><td>第三章</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15413077</td><td>隐婚老公夜归被我堵</td><td>88822238</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15413077</td><td>隐婚老公夜归被我堵</td><td>88821838</td><td>第1章 堵在玄关的人</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15412657</td><td>重生焰王逆转结局-d830</td><td>88820351</td><td>第1章 重生前夜</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15412657</td><td>重生焰王逆转结局-d830</td><td>88820805</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15412585</td><td>我是奈亚公主他是炎之星-d091</td><td>88820049</td><td>第1章 全票通过的献祭决议</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15412247</td><td>穿成月之星我嫁焰王-d689</td><td>88818955</td><td>第1章 重生撞进死对头怀里</td><td>30</td><td>是</td></tr><tr><td>129145786</td><td>15412247</td><td>穿成月之星我嫁焰王-d689</td><td>88822329</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>4130717</td><td>15411806</td><td>穿进军旅我遇旧识</td><td>88817846</td><td>第1章 报道日撞上旧人</td><td>30</td><td>是</td></tr><tr><td>135080252</td><td>15411684</td><td>循环日期里校霸偏要亲我-d320</td><td>88818619</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135072553</td><td>15411426</td><td>无人求救</td><td>88816889</td><td>第1章 跪到天亮也没用</td><td>30</td><td>是</td></tr><tr><td>124731856</td><td>15411390</td><td>在无限流避男主-d847</td><td>88816770</td><td>第1章 恐怖动物园开局</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15410434</td><td>领结婚证后我马甲掉了</td><td>88834828</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15410434</td><td>领结婚证后我马甲掉了</td><td>88833451</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15410434</td><td>领结婚证后我马甲掉了</td><td>88814166</td><td>第1章 刚领证就上热搜</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15410397</td><td>我当十八线前夫求领证</td><td>88832437</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15410397</td><td>我当十八线前夫求领证</td><td>88814084</td><td>第1章 大佬空降剧组</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15410397</td><td>我当十八线前夫求领证</td><td>88815113</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135082463</td><td>15409403</td><td>时透双子君</td><td>88812344</td><td>时透双子文1（上）</td><td>30</td><td>是</td></tr><tr><td>135107676</td><td>15408869</td><td>木头义勇有小肚子，实弥香晕了</td><td>88810327</td><td>第1章 风柱的筷子僵了</td><td>30</td><td>是</td></tr><tr><td>135111635</td><td>15408531</td><td>合租后我被表哥宠爆</td><td>88809603</td><td>第1章 暴雪天搬去表哥家</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407469</td><td>穿成娇娇女，营长掌心娇</td><td>88807294</td><td>第1章 退婚</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407469</td><td>穿成娇娇女，营长掌心娇</td><td>88835642</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15407356</td><td>假联姻后我们都动心了</td><td>88814806</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15407356</td><td>假联姻后我们都动心了</td><td>88817996</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15407356</td><td>假联姻后我们都动心了</td><td>88807055</td><td>第1章 婚礼上的协议</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407277</td><td>嫁入军营后竹马疯魔了-d409</td><td>88834731</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407277</td><td>嫁入军营后竹马疯魔了-d409</td><td>88834388</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407277</td><td>嫁入军营后竹马疯魔了-d409</td><td>88806821</td><td>第1章 欢迎会的不对劲</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407092</td><td>嫁入军营后竹马疯了-d226</td><td>88831741</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407092</td><td>嫁入军营后竹马疯了-d226</td><td>88831966</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15407092</td><td>嫁入军营后竹马疯了-d226</td><td>88806360</td><td>第1章 欢迎宴上的不对劲</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15407035</td><td>同居三年他说没领证</td><td>88807200</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15407035</td><td>同居三年他说没领证</td><td>88806757</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15407035</td><td>同居三年他说没领证</td><td>88806235</td><td>第1章 堵在玄关的摊牌</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15406925</td><td>我嫁营长，竹马强取豪夺-d474</td><td>88805977</td><td>第1章 欢迎宴的酒</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15406925</td><td>我嫁营长，竹马强取豪夺-d474</td><td>88828719</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15406925</td><td>我嫁营长，竹马强取豪夺-d474</td><td>88828486</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>129997843</td><td>15406762</td><td>我扮废柴她帮我复仇</td><td>88805638</td><td>第1章 破庙捡回半条命</td><td>30</td><td>是</td></tr><tr><td>135111703</td><td>15406529</td><td>重逢的桂恒</td><td>88807001</td><td>第二章</td><td>30</td><td>是</td></tr><tr><td>135111703</td><td>15406529</td><td>重逢的桂恒</td><td>88813336</td><td>第三章</td><td>30</td><td>是</td></tr><tr><td>135114847</td><td>15406511</td><td>我的人你也配碰？</td><td>88804947</td><td>第1章 初遇</td><td>30</td><td>是</td></tr><tr><td>134853714</td><td>15406173</td><td>重回八零我带巨款嫁糙汉-d588</td><td>88804049</td><td>第1章 相亲现场拍板嫁糙汉</td><td>30</td><td>是</td></tr><tr><td>135114323</td><td>15405348</td><td>明面上对家，暗里是恋人</td><td>88802199</td><td>第1章 </td><td>30</td><td>是</td></tr><tr><td>135114323</td><td>15405348</td><td>明面上对家，暗里是恋人</td><td>88803060</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>135113310</td><td>15404591</td><td>我是师尊他要黏我</td><td>88800484</td><td>第1章 小徒弟当众堵山门</td><td>30</td><td>是</td></tr><tr><td>129775003</td><td>15404107</td><td>我当省拟的那些日子</td><td>88799428</td><td>第1章 刚上岗就撞见大瓜</td><td>30</td><td>是</td></tr><tr><td>135101364</td><td>15403708</td><td>竹马住别墅病娇偏黏我</td><td>88798520</td><td>第1章 搬去郊野别墅的第一晚</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15403427</td><td>我假死逃会，好友追到美国</td><td>88801448</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15403427</td><td>我假死逃会，好友追到美国</td><td>88797845</td><td>第1章 薯条掉地上的瞬间我人傻了</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15403427</td><td>我假死逃会，好友追到美国</td><td>88799062</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15403289</td><td>母是女王手下我要救她</td><td>88798855</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15403289</td><td>母是女王手下我要救她</td><td>88797533</td><td>第1章 铁笼外的母亲</td><td>30</td><td>是</td></tr><tr><td>135109489</td><td>15402693</td><td>不就是学霸校霸我偏要追-d082</td><td>88796075</td><td>第1章 自习室抢座战</td><td>30</td><td>是</td></tr><tr><td>135109489</td><td>15402693</td><td>不就是学霸校霸我偏要追-d082</td><td>88798863</td><td>新同学</td><td>30</td><td>是</td></tr><tr><td>135101364</td><td>15402590</td><td>竹马成双，病娇暗渡陈仓</td><td>88795800</td><td>第1章 酒局散场的后颈</td><td>30</td><td>是</td></tr><tr><td>129775003</td><td>15402588</td><td>我潜入深海反被黑化-d925</td><td>88795799</td><td>第1章 偷袭</td><td>30</td><td>是</td></tr><tr><td>118944792</td><td>15402376</td><td>穿越神兽金刚</td><td>88795220</td><td>第1章 刚穿来就遇怪兽？</td><td>30</td><td>是</td></tr><tr><td>135077380</td><td>15402361</td><td>他要减肥偏不让</td><td>88795184</td><td>第1章 又藏沙拉</td><td>30</td><td>是</td></tr><tr><td>135101364</td><td>15402149</td><td>他伴我长大病娇独占我</td><td>88794585</td><td>第1章 衣领上的草莓印</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15401862</td><td>我是懒羊羊爸妈是狼羊-d557</td><td>88793854</td><td>第1章 一睁眼多了五个爸妈</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15401862</td><td>我是懒羊羊爸妈是狼羊-d557</td><td>88795102</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15401862</td><td>我是懒羊羊爸妈是狼羊-d557</td><td>88795641</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15401820</td><td>我是懒羊宝穿去比奇堡</td><td>88793754</td><td>第1章 红太狼喊我闺女？</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15401548</td><td>我装十八线前夫是大佬</td><td>88805590</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15401548</td><td>我装十八线前夫是大佬</td><td>88793070</td><td>第1章 后台被截资源</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15401548</td><td>我装十八线前夫是大佬</td><td>88804960</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15401281</td><td>我乃懒羊羊羊村我称王</td><td>88793021</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15401281</td><td>我乃懒羊羊羊村我称王</td><td>88792346</td><td>第1章 晴天霹雳的身世</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15401196</td><td>我是娇小姐偏嫁铁血营长-d277</td><td>88792682</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15401196</td><td>我是娇小姐偏嫁铁血营长-d277</td><td>88793617</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15401196</td><td>我是娇小姐偏嫁铁血营长-d277</td><td>88792113</td><td>第1章 礼堂堵人要嫁他</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15401034</td><td>我是毒医偏撩营长</td><td>88791616</td><td>第1章 新婚夜放话</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15400901</td><td>我当糊咖对手却动心</td><td>88791289</td><td>第1章 刚穿就碰死对头</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15400695</td><td>我是懒羊羊亲爹妈找上门</td><td>88791822</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15400695</td><td>我是懒羊羊亲爹妈找上门</td><td>88791372</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15400695</td><td>我是懒羊羊亲爹妈找上门</td><td>88790804</td><td>第1章 俩傻子找上门认亲</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15400343</td><td>假联姻后我拿捏了豪门-d940</td><td>88791313</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15400343</td><td>假联姻后我拿捏了豪门-d940</td><td>88789832</td><td>第1章 婚前协议刚签就炸群</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15400216</td><td>我穿成懒羊羊乱入西游</td><td>88790315</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15400216</td><td>我穿成懒羊羊乱入西游</td><td>88789338</td><td>第1章 狼堡天降四个和尚</td><td>30</td><td>是</td></tr><tr><td>134693027</td><td>15400216</td><td>我穿成懒羊羊乱入西游</td><td>88789853</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135062186</td><td>15400198</td><td>双逍：扮弱小吏被权臣盯上了</td><td>88790308</td><td>收留</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15400133</td><td>我嫁营长养情夫-d876</td><td>88789084</td><td>第1章 门被踹开了</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15400133</td><td>我嫁营长养情夫-d876</td><td>88790552</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15400133</td><td>我嫁营长养情夫-d876</td><td>88790064</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15399935</td><td>我是少佐妻暗助营长复仇-d175</td><td>88788741</td><td>第3章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15399935</td><td>我是少佐妻暗助营长复仇-d175</td><td>88788517</td><td>第1章 雨夜藏人</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15399935</td><td>我是少佐妻暗助营长复仇-d175</td><td>88788675</td><td>第2章</td><td>30</td><td>是</td></tr><tr><td>111921196</td><td>15399890</td><td>戴面纱毒医被营长抢婚-d823</td><td>88788398</td><td>第1章 鬼子堵门抢人</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399845</td><td>我当十八线顶头上司追我</td><td>88791689</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399845</td><td>我当十八线顶头上司追我</td><td>88788248</td><td>第1章 空降的新总裁是旧相识</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399845</td><td>我当十八线顶头上司追我</td><td>88792059</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399843</td><td>装十八线我撩爆顶流</td><td>88788243</td><td>第1章 酒局堵人</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399843</td><td>装十八线我撩爆顶流</td><td>88788394</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399843</td><td>装十八线我撩爆顶流</td><td>88788497</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15399810</td><td>书名正在修改1785318550505120868</td><td>88788103</td><td>第1章 落地就撞冤家</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15399810</td><td>书名正在修改1785318550505120868</td><td>88788513</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135106555</td><td>15399810</td><td>书名正在修改1785318550505120868</td><td>88788327</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399703</td><td>我是十八线顶流求我复合</td><td>88788129</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399703</td><td>我是十八线顶流求我复合</td><td>88787820</td><td>第1章 综艺录到一半冤家来了</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399703</td><td>我是十八线顶流求我复合</td><td>88787958</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399512</td><td>装糊咖后大佬追来了</td><td>88787551</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399512</td><td>装糊咖后大佬追来了</td><td>88787716</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15399512</td><td>装糊咖后大佬追来了</td><td>88787286</td><td>第1章 新老板是旧人？</td><td>30</td><td>是</td></tr><tr><td>134766902</td><td>15399388</td><td>卧底归来故友成敌-d050</td><td>88787014</td><td>第1章 顶楼的熟悉轮廓</td><td>30</td><td>是</td></tr><tr><td>134522193</td><td>15399040</td><td>宋亚轩是我爸爸</td><td>88786164</td><td>1</td><td>30</td><td>是</td></tr><tr><td>135092093</td><td>15398779</td><td>我是站姐，严浩翔追我</td><td>88785656</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135092093</td><td>15398779</td><td>我是站姐，严浩翔追我</td><td>88785492</td><td>第1章 退圈微博刚发就被堵了</td><td>30</td><td>是</td></tr><tr><td>135092093</td><td>15398779</td><td>我是站姐，严浩翔追我</td><td>88785941</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135101364</td><td>15397848</td><td>竹马同居，他强吻我成瘾</td><td>88782612</td><td>第1章 墙根的薄荷味</td><td>30</td><td>是</td></tr><tr><td>135100518</td><td>15397281</td><td>前任重逢我俩疯了</td><td>88780794</td><td>第1章 综艺录制现场撞前任</td><td>30</td><td>是</td></tr><tr><td>135102224</td><td>15397224</td><td>全员聊天室</td><td>88781533</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>75385053</td><td>15396562</td><td>我是糊咖，顶流他死对头-d204</td><td>88778718</td><td>第1章 刚进场就撞死对头</td><td>30</td><td>是</td></tr><tr><td>135100274</td><td>15396490</td><td>我表面对家背地里恋人</td><td>88782245</td><td>一场恋爱</td><td>30</td><td>是</td></tr><tr><td>135100274</td><td>15396490</td><td>我表面对家背地里恋人</td><td>88778522</td><td>第1章 红毯对撞</td><td>30</td><td>是</td></tr><tr><td>135073521</td><td>15396270</td><td>俩老师争着喜欢我</td><td>88778033</td><td>第1章 俩老师都在我家门口？</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15395590</td><td>我当顶流前和老板好过</td><td>88777982</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15395590</td><td>我当顶流前和老板好过</td><td>88776282</td><td>第1章 热搜炸到家门口</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15395590</td><td>我当顶流前和老板好过</td><td>88776758</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135076301</td><td>15394771</td><td>我招桃花他总吃醋</td><td>88773904</td><td>第1章 练习室门口的猫</td><td>30</td><td>是</td></tr><tr><td>135076301</td><td>15394771</td><td>我招桃花他总吃醋</td><td>88777130</td><td>亲</td><td>30</td><td>是</td></tr><tr><td>135098522</td><td>15394545</td><td>穿成小甜妹拿下状元郎</td><td>88773391</td><td>第1章 刚穿越就撞进状元郎怀里</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15394495</td><td>穿成糊咖前夫是顶流老板</td><td>88774289</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15394495</td><td>穿成糊咖前夫是顶流老板</td><td>88774790</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135098093</td><td>15394495</td><td>穿成糊咖前夫是顶流老板</td><td>88773256</td><td>第1章 刚解约就穿回离婚前</td><td>30</td><td>是</td></tr><tr><td>135027506</td><td>15394460</td><td>联姻后我们极速热恋</td><td>88773600</td><td>烟花</td><td>30</td><td>是</td></tr><tr><td>135027506</td><td>15394460</td><td>联姻后我们极速热恋</td><td>88774041</td><td>妈</td><td>30</td><td>是</td></tr><tr><td>135027506</td><td>15394460</td><td>联姻后我们极速热恋</td><td>88773191</td><td>第1章 领证当天的意外发现</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15394340</td><td>假意联姻，她们偏要赢</td><td>88778200</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15394340</td><td>假意联姻，她们偏要赢</td><td>88777245</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>134990884</td><td>15394340</td><td>假意联姻，她们偏要赢</td><td>88772938</td><td>第1章 联姻协议签得比谁都快</td><td>30</td><td>是</td></tr><tr><td>135097922</td><td>15394008</td><td>我陷规则怪谈后</td><td>88772239</td><td>第1章 沾血的规则纸条</td><td>30</td><td>是</td></tr><tr><td>135025311</td><td>15393922</td><td>弃我而去时团独宠耀文</td><td>88780875</td><td>第二章</td><td>30</td><td>是</td></tr><tr><td>135025311</td><td>15393922</td><td>弃我而去时团独宠耀文</td><td>88772028</td><td>第1章 周年庆后台的尴尬</td><td>30</td><td>是</td></tr><tr><td>30631037</td><td>15393555</td><td>TNT：我当助理，顶流个个怕我</td><td>88771125</td><td>第1章 刚上任就被围堵</td><td>30</td><td>是</td></tr><tr><td>135096528</td><td>15393303</td><td>书名正在修改1785316710819725646</td><td>88799391</td><td>无题</td><td>30</td><td>是</td></tr><tr><td>135096528</td><td>15393303</td><td>书名正在修改1785316710819725646</td><td>88770552</td><td>第1章 私宴卫生间门口撞上</td><td>30</td><td>是</td></tr><tr><td>135096206</td><td>15392886</td><td>论坛遇他恋满学期</td><td>88769574</td><td>第1章 论坛飘满他的名字</td><td>30</td><td>是</td></tr><tr><td>64429077</td><td>15392027</td><td>普通少女竟是叶罗丽战神</td><td>88767710</td><td>第1章 拖后腿的普通少女</td><td>30</td><td>是</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      
+      <div class="summary-panel" data-summary-key="chapter_clicks">
+        <div class="summary-head">
+          <h3>内容总结 · 续写章节点击次数</h3>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
+        </div>
+        <textarea
+          class="summary-input"
+          rows="4"
+          placeholder="在此记录本板块结论、异常点与下一步行动…"
+          aria-label="内容总结 · 续写章节点击次数"
+        ></textarea>
+        <div class="summary-foot">
+          <span class="summary-status" aria-live="polite"></span>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
+        </div>
+      </div>
+
+
+
       <section class="dataset-block" id="continue_books">
         <div class="dataset-head">
           <h2 class="dataset-title">续写模式</h2>
@@ -1729,6 +1846,19 @@
           
       <div class="mod-item active">
         <div class="mod-item-top">
+          <span class="badge badge-raw">原文</span>
+          <time>2026-07-30T16:34:37</time>
+        </div>
+        <div class="mod-item-body">
+          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
+          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
+          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
+          
+        </div>
+      </div>
+
+      <div class="mod-item ">
+        <div class="mod-item-top">
           <span class="badge badge-manual">手动</span>
           <time>2026-07-30T14:10:08</time>
         </div>
@@ -1965,19 +2095,6 @@
         <div class="mod-item-top">
           <span class="badge badge-manual">手动</span>
           <time>2026-07-30T12:35:25</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-22 ~ 2026-07-30</code></div>
-          <p>手动指定统计时间：2026-07-22 ~ 2026-07-29（共 8 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-22" data-end="2026-07-30">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T12:35:18</time>
         </div>
         <div class="mod-item-body">
           <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
