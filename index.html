@@ -179,6 +179,8 @@
   }
   .summary-status { font-size: 11.5px; color: var(--muted); min-height: 1.2em; }
   .summary-status.saved { color: var(--publish); }
+  .summary-toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .summary-actions { display: inline-flex; gap: 10px; }
   .gen-threshold-card {
     border-color: #d7e6f8; background: linear-gradient(180deg, #f7fbff, #fff);
   }
@@ -247,6 +249,20 @@
            · 执行窗口 2026-07-22~2026-07-29
         </div>
       </div>
+
+      
+      <div class="summary-toolbar card section">
+        <h2>内容总结 · 发布</h2>
+        <p class="sub">点「写入并推送到 GitHub」会保存总结、重建看板，并自动更新公开链接（需在 .env 配置 GITHUB_TOKEN）。</p>
+        <div class="summary-toolbar-actions">
+          <button type="button" id="summary-publish-btn" class="primary-btn">写入并推送到 GitHub</button>
+          <button type="button" id="summary-export-btn" class="chip">导出 JSON</button>
+          <button type="button" id="summary-import-btn" class="chip">导入 JSON</button>
+          <input type="file" id="summary-import-file" accept="application/json,.json" hidden />
+        </div>
+        <p id="summary-publish-msg" class="form-msg" aria-live="polite"></p>
+      </div>
+
 
       <div class="top-tabs" role="tablist">
         <button type="button" class="tab active" data-tab="funnel" role="tab" aria-selected="true">转化看板</button>
@@ -390,7 +406,7 @@
       <div class="summary-panel" data-summary-key="mode-compare">
         <div class="summary-head">
           <h3>内容总结 · 续写模式 vs ai模式</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -400,7 +416,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -546,7 +564,7 @@
       <div class="summary-panel" data-summary-key="books-table-compare">
         <div class="summary-head">
           <h3>内容总结 · 续写书籍 vs AI书籍</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -556,7 +574,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -777,7 +797,7 @@
       <div class="summary-panel" data-summary-key="continue_books_summary">
         <div class="summary-head">
           <h3>内容总结 · 续写书籍总表</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -787,7 +807,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -984,7 +1006,7 @@
       <div class="summary-panel" data-summary-key="ai_books_summary">
         <div class="summary-head">
           <h3>内容总结 · AI书籍总表</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -994,7 +1016,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -1169,7 +1193,7 @@
       <div class="summary-panel" data-summary-key="continue_books">
         <div class="summary-head">
           <h3>内容总结 · 续写模式</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -1179,7 +1203,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -1475,7 +1501,7 @@
       <div class="summary-panel" data-summary-key="ai_book_users">
         <div class="summary-head">
           <h3>内容总结 · ai模式</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -1485,7 +1511,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -1628,7 +1656,7 @@
       <div class="summary-panel" data-summary-key="income-compare">
         <div class="summary-head">
           <h3>内容总结 · 收入对比</h3>
-          <span class="summary-hint">自动保存到本机浏览器</span>
+          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
         </div>
         <textarea
           class="summary-input"
@@ -1638,7 +1666,9 @@
         ></textarea>
         <div class="summary-foot">
           <span class="summary-status" aria-live="polite"></span>
-          <button type="button" class="summary-clear link-btn">清空</button>
+          <span class="summary-actions">
+            <button type="button" class="summary-clear link-btn">清空</button>
+          </span>
         </div>
       </div>
 
@@ -1962,6 +1992,7 @@
 
   </div>
   <script>
+  window.__DASHBOARD_SUMMARIES__ = {};
   (function () {
     var tabs = document.querySelectorAll(".top-tabs .tab");
     tabs.forEach(function (tab) {
@@ -1977,40 +2008,61 @@
       });
     });
 
-    // 内容总结面板：localStorage 持久化
+    // 内容总结：公开站用写入 HTML 的内容；本机另有浏览器草稿
     (function initSummaryPanels() {
       var PREFIX = "xuxie-dashboard-summary:";
-      document.querySelectorAll(".summary-panel[data-summary-key]").forEach(function (panel) {
+      var embedded = window.__DASHBOARD_SUMMARIES__ || {};
+      var panels = Array.prototype.slice.call(document.querySelectorAll(".summary-panel[data-summary-key]"));
+
+      function collect() {
+        var out = {};
+        panels.forEach(function (panel) {
+          var key = panel.getAttribute("data-summary-key") || "";
+          var input = panel.querySelector(".summary-input");
+          if (!key || !input) return;
+          if (input.value && input.value.trim()) out[key] = input.value;
+        });
+        return out;
+      }
+
+      function apiBase() {
+        var host = location.hostname || "";
+        if (host === "127.0.0.1" || host === "localhost") return location.origin;
+        return "";
+      }
+
+      panels.forEach(function (panel) {
         var key = panel.getAttribute("data-summary-key") || "";
         var input = panel.querySelector(".summary-input");
         var status = panel.querySelector(".summary-status");
         var clearBtn = panel.querySelector(".summary-clear");
         if (!input || !key) return;
         var storageKey = PREFIX + key;
-        try {
-          var saved = localStorage.getItem(storageKey);
-          if (saved) input.value = saved;
-        } catch (e) {}
-        var timer = null;
+        var fromFile = embedded[key] || "";
+        var fromLocal = "";
+        try { fromLocal = localStorage.getItem(storageKey) || ""; } catch (e) {}
+        // 优先展示已写入公开站的内容；若无则回退本机草稿
+        input.value = fromFile || fromLocal || "";
         function setStatus(text, ok) {
           if (!status) return;
           status.textContent = text || "";
           status.className = "summary-status" + (ok ? " saved" : "");
         }
-        function persist() {
+        function persistDraft() {
           try {
             localStorage.setItem(storageKey, input.value);
-            setStatus("已保存 " + new Date().toLocaleTimeString(), true);
+            setStatus("草稿已存本机 " + new Date().toLocaleTimeString(), true);
           } catch (e) {
-            setStatus("保存失败（浏览器限制）", false);
+            setStatus("草稿保存失败", false);
           }
         }
+        var timer = null;
         input.addEventListener("input", function () {
           setStatus("输入中…", false);
           if (timer) clearTimeout(timer);
-          timer = setTimeout(persist, 400);
+          timer = setTimeout(persistDraft, 400);
         });
-        input.addEventListener("blur", persist);
+        input.addEventListener("blur", persistDraft);
         if (clearBtn) {
           clearBtn.addEventListener("click", function () {
             input.value = "";
@@ -2019,6 +2071,110 @@
             input.focus();
           });
         }
+      });
+
+      function setPublishMsg(text, type) {
+        document.querySelectorAll("#summary-publish-msg").forEach(function (el) {
+          el.textContent = text || "";
+          el.className = "form-msg" + (type ? " " + type : "");
+        });
+      }
+
+      function downloadJson(obj) {
+        var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "summaries.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      document.querySelectorAll("#summary-export-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          downloadJson(collect());
+          setPublishMsg("已导出 summaries.json", "ok");
+        });
+      });
+
+      document.querySelectorAll("#summary-import-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var fileInput = document.getElementById("summary-import-file");
+          if (fileInput) fileInput.click();
+        });
+      });
+
+      var fileInput = document.getElementById("summary-import-file");
+      if (fileInput) {
+        fileInput.addEventListener("change", function () {
+          var file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function () {
+            try {
+              var data = JSON.parse(String(reader.result || "{}"));
+              panels.forEach(function (panel) {
+                var key = panel.getAttribute("data-summary-key") || "";
+                var input = panel.querySelector(".summary-input");
+                if (!input || !key) return;
+                if (data[key] != null) {
+                  input.value = String(data[key]);
+                  try { localStorage.setItem(PREFIX + key, input.value); } catch (e) {}
+                }
+              });
+              setPublishMsg("已导入，请再点「写入公开站」", "ok");
+            } catch (e) {
+              setPublishMsg("导入失败：JSON 无效", "err");
+            }
+          };
+          reader.readAsText(file);
+          fileInput.value = "";
+        });
+      }
+
+      document.querySelectorAll("#summary-publish-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var payload = collect();
+          var base = apiBase();
+          if (!base) {
+            downloadJson(payload);
+            setPublishMsg(
+              "当前不是本地服务。已导出 summaries.json：请放到项目根目录，运行 python scripts/build_dashboard.py 后重新上传 docs/index.html",
+              "err"
+            );
+            return;
+          }
+          btn.disabled = true;
+          setPublishMsg("正在写入总结并重建看板…", "");
+          fetch(base + "/api/summaries", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          })
+            .then(function (r) {
+              return r.json().then(function (data) {
+                return { okHttp: r.ok, data: data };
+              });
+            })
+            .then(function (res) {
+              if (!res.data || !res.data.ok) {
+                throw new Error((res.data && res.data.error) || "写入失败");
+              }
+              window.__DASHBOARD_SUMMARIES__ = payload;
+              setPublishMsg(
+                (res.data.message || "已写入"),
+                res.data.pushed ? "ok" : (res.data.push_error ? "err" : "ok")
+              );
+              if (res.data.pushed) {
+                setTimeout(function () { location.reload(); }, 900);
+              }
+            })
+            .catch(function (err) {
+              setPublishMsg((err && err.message) || "写入失败", "err");
+            })
+            .finally(function () {
+              btn.disabled = false;
+            });
+        });
       });
     })();
 
