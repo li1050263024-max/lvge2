@@ -372,6 +372,22 @@
       if (!Number.isFinite(n)) return "—";
       return (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
     }
+    /** 折线图纵轴：按当前可见序列自动留白，避免旧规则把起点锁在 6500 */
+    function autoYScale(seriesArrays, padRatio = 0.1) {
+      const vals = seriesArrays.flat().filter((v) => Number.isFinite(v));
+      if (!vals.length) return { title: { display: true, text: "虚拟人气" }, grid: { color: "#f5f5f4" }, min: 0, suggestedMax: 100 };
+      let lo = Math.min(...vals);
+      let hi = Math.max(...vals);
+      if (hi <= lo) hi = lo + 100;
+      const span = hi - lo;
+      const pad = Math.max(span * padRatio, hi > 0 ? hi * 0.04 : 50);
+      return {
+        title: { display: true, text: "虚拟人气" },
+        grid: { color: "#f5f5f4" },
+        min: Math.max(0, lo - pad),
+        max: hi + pad,
+      };
+    }
 
     function bookUpdateTierKey(totalWords) {
       const w = totalWords || 0;
@@ -836,14 +852,9 @@
         <div class="stat"><div class="k">新规则字数阶段</div><div class="v" style="font-size:15px;line-height:1.35">${startSt.name.split("(")[0]} → ${endSt.name.split("(")[0]}</div><div class="d">昨UV抬档 ${liftedDays}天 · 机器人藏 ${robotTotal}</div></div>
       `;
 
-      const yScale = {
-        title: { display: true, text: "虚拟人气" },
-        grid: { color: "#f5f5f4" },
-      };
-      if (showOld && oldAvgSteady >= 6500) {
-        yScale.min = 6500;
-        yScale.max = Math.max(8600, peakOld * 1.02);
-      }
+      const ySeries = [finalNew, capArr];
+      if (showOld) ySeries.push(finalOld);
+      const yScale = autoYScale(ySeries);
 
       const common = {
         responsive: true,
@@ -853,6 +864,20 @@
         scales: {
           x: { title: { display: true, text: "模拟日" }, ticks: { maxTicksLimit: 12 }, grid: { color: "#f5f5f4" } },
           y: yScale,
+        },
+      };
+      const partsCommon = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { title: { display: true, text: "模拟日" }, ticks: { maxTicksLimit: 12 }, grid: { color: "#f5f5f4" }, stacked: true },
+          y: {
+            title: { display: true, text: "虚拟人气" },
+            grid: { color: "#f5f5f4" },
+            stacked: true,
+          },
         },
       };
 
@@ -904,14 +929,7 @@
             { label: "触顶停补(未加)", data: skipSeries.map((v) => -v), backgroundColor: "#a8a29e", stack: "a" },
           ],
         },
-        options: {
-          ...common,
-          scales: {
-            ...common.scales,
-            x: { ...common.scales.x, stacked: true },
-            y: { ...common.scales.y, stacked: true },
-          },
-        },
+        options: partsCommon,
       });
 
       document.querySelector("#day-table tbody").innerHTML = labels
