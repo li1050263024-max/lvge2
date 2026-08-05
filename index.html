@@ -1,2474 +1,995 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>续写 · 前五章阶段转化看板</title>
-<style>
-  :root {
-    --bg: #f3f5f8;
-    --card: #ffffff;
-    --ink: #1c2430;
-    --muted: #6b7788;
-    --line: #e5e9f0;
-    --create: #2f7ce0;
-    --publish: #1f9d63;
-    --amber: #c98516;
-    --shadow: 0 1px 2px rgba(20,24,33,.04), 0 10px 28px rgba(20,24,33,.05);
-    --radius: 14px;
-    --font: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    --side-w: 320px;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font-family: var(--font); line-height: 1.5;
-  }
-  .layout {
-    width: 100%; max-width: none; margin: 0; padding: 24px 24px 64px; box-sizing: border-box;
-    display: grid; grid-template-columns: minmax(0, 1fr) var(--side-w); gap: 20px; align-items: start;
-  }
-  .main { min-width: 0; }
-  .hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.02em; }
-  .hero p { margin: 0; color: var(--muted); font-size: 13.5px; }
-  .meta { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
-  .meta code { background: #eef2f7; padding: 1px 6px; border-radius: 6px; font-size: 12px; }
-  .kpis {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 22px 0 8px;
-  }
-  .kpis-6 { grid-template-columns: repeat(3, 1fr); }
-  .kpi {
-    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 16px 18px; box-shadow: var(--shadow);
-  }
-  .kpi .val { font-size: 26px; font-weight: 700; letter-spacing: -.4px; }
-  .kpi .lab { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
-  .kpi.create .val { color: var(--create); }
-  .kpi.publish .val { color: var(--publish); }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-  .grid.grid-3 { grid-template-columns: repeat(3, 1fr); }
-  .toast-card { cursor: default; transition: box-shadow .15s ease, border-color .15s ease; }
-  .toast-card:hover {
-    border-color: #c9d4e3; box-shadow: 0 8px 24px rgba(28, 45, 74, .08);
-  }
-  .hover-toast {
-    position: fixed; z-index: 9999; max-width: min(420px, calc(100vw - 24px));
-    padding: 10px 14px; border-radius: 10px; font-size: 12.5px; line-height: 1.45;
-    color: #fff; background: rgba(28, 45, 74, .92); box-shadow: 0 10px 28px rgba(0,0,0,.18);
-    pointer-events: none; opacity: 0; transform: translateY(4px);
-    transition: opacity .12s ease, transform .12s ease; white-space: pre-wrap; word-break: break-word;
-  }
-  .hover-toast.show { opacity: 1; transform: translateY(0); }
-  .card, .side-card {
-    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 18px; box-shadow: var(--shadow);
-  }
-  .card h2, .side-card h2 { margin: 0 0 4px; font-size: 16px; }
-  .side-card h3 { margin: 18px 0 10px; font-size: 13px; color: var(--muted); font-weight: 650; }
-  .card .sub, .side-card .sub { margin: 0 0 14px; font-size: 12.5px; color: var(--muted); }
-  .bar-row { display: grid; grid-template-columns: 88px 1fr; gap: 8px 12px; margin-bottom: 12px; align-items: center; }
-  .bar-label { font-size: 13px; font-weight: 600; }
-  .bar-track { height: 12px; background: #edf1f6; border-radius: 999px; overflow: hidden; grid-column: 2; }
-  .bar-fill { height: 100%; border-radius: 999px; }
-  .bar-fill.create { background: linear-gradient(90deg, #6ba8e8, var(--create)); }
-  .bar-fill.publish { background: linear-gradient(90deg, #6fc9a0, var(--publish)); }
-  .bar-meta { grid-column: 2; display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
-  .bar-meta strong { color: var(--ink); font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; }
-  th:first-child, td:first-child { text-align: left; }
-  th { color: var(--muted); font-weight: 600; font-size: 12px; }
-  tbody tr:hover { background: #fafbfd; }
-  .section { margin-top: 22px; }
-  .empty { color: var(--muted); font-size: 13px; }
-  .foot { margin-top: 28px; font-size: 12px; color: var(--muted); }
-
-  .sidebar { position: sticky; top: 16px; }
-  .current-mod {
-    background: #f7f9fc; border: 1px solid var(--line); border-radius: 12px; padding: 14px;
-  }
-  .current-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .status {
-    font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
-  }
-  .status.ok { background: #e7f7ee; color: var(--publish); }
-  .status.muted { background: #eef1f5; color: var(--muted); }
-  .days { font-size: 12px; color: var(--muted); }
-  .range-box label { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
-  .range-val {
-    font-size: 12.5px; line-height: 1.45; background: #fff; border: 1px solid var(--line);
-    border-radius: 8px; padding: 8px 10px; word-break: break-all;
-  }
-  .range-val.exec { border-color: #b7ddc8; background: #f3fbf6; }
-  .arrow { text-align: center; color: var(--muted); margin: 6px 0; font-size: 12px; }
-  .reason { margin: 10px 0 4px; font-size: 12.5px; color: var(--ink); }
-  .tiny { margin: 0; font-size: 11.5px; color: var(--muted); }
-  .mod-list { display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow: auto; padding-right: 2px; }
-  .mod-item {
-    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff;
-  }
-  .mod-item.active { border-color: #9ec2ea; box-shadow: inset 3px 0 0 var(--create); }
-  .mod-item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .mod-item-top time { font-size: 11.5px; color: var(--muted); }
-  .badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; }
-  .badge-mod { background: #e8f1fb; color: var(--create); }
-  .badge-raw { background: #eef1f5; color: var(--muted); }
-  .badge-manual { background: #fff4e5; color: var(--amber); }
-  .mod-line { display: grid; grid-template-columns: 36px 1fr; gap: 6px; font-size: 12px; margin-bottom: 3px; }
-  .mod-line span { color: var(--muted); }
-  .mod-line code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 11.5px; background: #f4f6f9; padding: 1px 5px; border-radius: 4px;
-  }
-  .mod-item-body p { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
-  .link-btn {
-    margin-top: 8px; padding: 0; border: none; background: none; color: var(--create);
-    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
-  }
-  .link-btn:hover { text-decoration: underline; }
-
-  .range-form {
-    display: flex; flex-direction: column; gap: 10px;
-    background: #f7f9fc; border: 1px solid var(--line); border-radius: 12px; padding: 14px;
-  }
-  .range-form .field { display: flex; flex-direction: column; gap: 4px; }
-  .range-form label { font-size: 12px; color: var(--muted); }
-  .range-form input[type="date"] {
-    font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line);
-    border-radius: 8px; background: #fff; color: var(--ink);
-  }
-  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip {
-    font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 999px;
-    border: 1px solid var(--line); background: #fff; color: var(--muted); cursor: pointer;
-  }
-  .chip:hover { border-color: #9ec2ea; color: var(--create); }
-  .primary-btn {
-    font: inherit; font-size: 13px; font-weight: 700; padding: 10px 12px; border: none;
-    border-radius: 10px; background: var(--create); color: #fff; cursor: pointer;
-  }
-  .primary-btn:disabled { opacity: .65; cursor: wait; }
-  .form-msg { margin: 0; min-height: 1.2em; font-size: 12.5px; color: var(--muted); }
-  .form-msg.ok { color: var(--publish); }
-  .form-msg.err { color: #c44; }
-  .dataset-block {
-    margin-top: 32px; padding: 22px 20px 8px;
-    background: #fbfcfe; border: 1px solid var(--line); border-radius: var(--radius);
-  }
-  .dataset-block + .dataset-block { margin-top: 22px; }
-  .summary-panel {
-    margin: 14px 0 28px; padding: 16px 18px;
-    background: #fffdf7; border: 1px dashed #e2d6b8; border-radius: var(--radius);
-  }
-  .summary-head {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-    margin-bottom: 10px; flex-wrap: wrap;
-  }
-  .summary-head h3 { margin: 0; font-size: 14px; color: var(--ink); }
-  .summary-hint { font-size: 11.5px; color: var(--muted); }
-  .summary-input {
-    width: 100%; box-sizing: border-box; min-height: 96px; resize: vertical;
-    font: inherit; font-size: 13.5px; line-height: 1.55; color: var(--ink);
-    border: 1px solid #e8dfc6; border-radius: 10px; padding: 10px 12px;
-    background: #fff; outline: none;
-  }
-  .summary-input:focus { border-color: #c9b57a; box-shadow: 0 0 0 3px rgba(201,181,122,.18); }
-  .summary-foot {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin-top: 8px;
-  }
-  .summary-status { font-size: 11.5px; color: var(--muted); min-height: 1.2em; }
-  .summary-status.saved { color: var(--publish); }
-  .summary-toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .summary-actions { display: inline-flex; gap: 10px; }
-  .gen-threshold-card {
-    border-color: #d7e6f8; background: linear-gradient(180deg, #f7fbff, #fff);
-  }
-  .dataset-head { margin-bottom: 8px; }
-  .cmp-svg { width: 100%; height: auto; display: block; }
-  .cmp-grid { stroke: var(--line); stroke-width: 1; }
-  .cmp-axis { fill: var(--muted); font-size: 11px; }
-  .cmp-val { fill: var(--ink); font-size: 10px; font-weight: 600; }
-  .cmp-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12.5px; color: var(--ink-2, var(--muted)); }
-  .cmp-legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .cmp-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-  .compare-block { border-color: #cfe0f5; background: linear-gradient(180deg, #f7fbff, #fbfcfe); }
-  .top-tabs {
-    display: flex; gap: 8px; margin: 18px 0 8px; flex-wrap: wrap;
-  }
-  .top-tabs .tab {
-    border: 1px solid var(--line); background: #fff; color: var(--muted);
-    border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 650;
-    cursor: pointer; font-family: inherit;
-  }
-  .top-tabs .tab:hover { color: var(--ink); border-color: #c9d4e3; }
-  .top-tabs .tab.active {
-    background: var(--create); border-color: var(--create); color: #fff;
-  }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-  .mini-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;
-  }
-  .mini-card {
-    border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: #fff;
-  }
-  .mini-title { font-size: 12.5px; font-weight: 650; margin-bottom: 8px; color: var(--ink); }
-  .mini-bar {
-    display: grid; grid-template-columns: 52px 1fr 42px; gap: 6px; align-items: center;
-    font-size: 11.5px; color: var(--muted); margin-bottom: 6px;
-  }
-  .mini-bar i {
-    display: block; height: 8px; border-radius: 999px; background: var(--create); min-width: 0;
-  }
-  .mini-bar b { color: var(--ink); font-size: 12px; text-align: right; }
-
-  @media (max-width: 1100px) {
-    .layout { grid-template-columns: 1fr; }
-    .sidebar { position: static; }
-  }
-  @media (max-width: 860px) {
-    .kpis, .kpis-6, .grid, .grid.grid-3 { grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 560px) {
-    .kpis, .kpis-6, .grid, .grid.grid-3 { grid-template-columns: 1fr; }
-    .bar-row { grid-template-columns: 1fr; }
-    .bar-track, .bar-meta { grid-column: 1; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>新版人气值补量 · 推算模型</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f1ea; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4;
+      --card: #fff; --accent: #0f766e; --accent-soft: #ccfbf1; --danger: #b91c1c;
+      --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--font); color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 0% 0%, #d8f3ef, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 100% 0%, #fde8d8, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 20px 72px; }
+    h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 18px; max-width: 860px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab {
+      border: 1px solid var(--line); background: var(--card); color: var(--muted);
+      padding: 8px 14px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 14px; }
+    @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+    }
+    .card h2 { margin: 0 0 10px; font-size: 13px; color: var(--muted); font-weight: 650; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 8px;
+      padding: 8px 10px; font: inherit; font-size: 13px; background: #fff;
+    }
+    textarea {
+      min-height: 160px; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; line-height: 1.45; resize: vertical;
+    }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    @media (max-width: 800px) { .stats { grid-template-columns: 1fr 1fr; } }
+    .stat {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    }
+    .stat .k { font-size: 12px; color: var(--muted); }
+    .stat .v { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: -0.03em; }
+    .stat .v.down { color: var(--danger); }
+    .stat .v.up { color: var(--accent); }
+    .stat .d { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .chart-box { position: relative; height: 300px; }
+    .chart-box.sm { height: 230px; }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 10px; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    button.btn {
+      border: none; background: var(--accent); color: #fff; border-radius: 8px;
+      padding: 9px 14px; font: inherit; font-size: 13px; cursor: pointer;
+    }
+    button.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .formula {
+      font-size: 12.5px; line-height: 1.65; background: #fafaf9; border: 1px solid var(--line);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    }
+    .formula code {
+      background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 4px; font-size: 12px;
+    }
+    table.data { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.data th, table.data td {
+      border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: right; white-space: nowrap;
+    }
+    table.data th:first-child, table.data td:first-child { text-align: left; }
+    table.data th { color: var(--muted); font-weight: 600; }
+    .tone-down { color: var(--danger); }
+    .tone-up { color: var(--accent); }
+    .scroll { overflow: auto; max-height: 360px; }
+    .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; }
+    .check input { width: auto; }
+    .pill {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent); margin-left: 6px;
+    }
+  </style>
 </head>
 <body>
-  <div class="layout">
-    <div class="main">
-      <div class="hero">
-        <h1>续写 · 前五章阶段转化看板</h1>
-        <p>转化漏斗与三种书籍收入对比。数据源：续写书籍总表 / AI书籍总表 / 全站新书收入 / 续写书收入 / AI书收入 / 续写章节点击次数 / 续写模式 / ai模式。</p>
-        <div class="meta">
-          更新时间 2026-07-30T20:19:48
-          · 同页展示 8 个数据源
-           · 执行窗口 2026-07-01~2026-07-30
+  <div class="wrap">
+    <h1>新版人气值补量 · 推算模型</h1>
+    <p class="sub">
+      按《新版人气值补量规则》：
+      <code>最终虚拟 = MIN(更新补量 + 互动补量, 字数阶段上限)</code>。
+      <strong>更新补量</strong>由「作品累计字数档 × 单章更新字数档」二维表决定，再 × 连续更新系数。
+      <strong>发布章节后的机器人收藏行为不变</strong>；机器人收藏仍可触发新版「收藏」互动补量（+200~300，日最多 10 次）。
+      可对照旧规则跑同一随机种子的数值影响。
+    </p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="sim">跑数模拟</button>
+      <button class="tab" data-tab="rules">新规则速查</button>
+      <button class="tab" data-tab="vs">新旧对照说明</button>
+    </div>
+
+    <section id="panel-sim" class="panel active">
+      <div class="formula">
+        更新补量 = 作品字数档 × 单章字数档 的脉冲合计 × 近7天连续更新系数；
+        互动补量 = 收藏/评论/段评/鲜花/打赏/打卡（含机器人触发的收藏）；
+        日终 = 每次触发在区间内随机补量，当日累计≥上限后停止后续补量；
+        日上限由<strong>当日累计字数阶段</strong>与<strong>前一日真实 UV</strong>抬档共同决定。
+      </div>
+      <div class="stats" id="sim-stats"></div>
+      <div class="grid">
+        <div class="card">
+          <h2>情景参数</h2>
+          <label>更新节奏</label>
+          <select id="updatePace">
+            <option value="high" selected>日更（近7天易满勤 ×2）</option>
+            <option value="mid">中更新（约每2天）</option>
+            <option value="low">低更新（约每5天）</option>
+            <option value="burst">前7天日更后停更</option>
+          </select>
+          <div class="row2">
+            <div>
+              <label>单章字数</label>
+              <select id="chapterWords">
+                <option value="400">&lt;500（约400）</option>
+                <option value="800">500~1000（约800）</option>
+                <option value="2000" selected>1000~3000（约2000）</option>
+                <option value="4000">3000~5000（约4000）</option>
+              </select>
+            </div>
+            <div>
+              <label>模拟天数</label>
+              <input id="simDays" type="number" min="14" max="120" value="30" />
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label>开书已有字数（万）</label>
+              <input id="wordsWan" type="number" min="0" step="0.1" value="0.5" title="发章后会按「开书+累加」升级字数阶段上限" />
+            </div>
+            <div>
+              <label>随机种子</label>
+              <input id="seed" type="number" value="42" />
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label>起始全书收藏</label>
+              <input id="favStart" type="number" min="0" value="80" />
+            </div>
+            <div>
+              <label>基准 UV（生成稀疏昨UV）</label>
+              <input id="baseUv" type="number" min="0" value="5" title="模拟前一日真实UV：多数天为0，偶发围绕基准波动；D0 直接用此值抬档" />
+            </div>
+          </div>
+          <label>真实互动稀疏度（非机器人）</label>
+          <select id="interactHeat">
+            <option value="none">无真实互动</option>
+            <option value="cold" selected>偶发（长尾）</option>
+            <option value="mid">中等</option>
+            <option value="hot">活跃</option>
+          </select>
+          <div class="check">
+            <input id="showOld" type="checkbox" checked />
+            <label for="showOld" style="margin:0">同时画旧规则（同种子·同机器人日程，日上限固定8000）</label>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-sim">重新掷骰跑数</button>
+            <button class="btn ghost" id="btn-newbook">新书从零开更</button>
+            <button class="btn ghost" id="btn-daily">日更长尾</button>
+            <button class="btn ghost" id="btn-grow">成长期有UV</button>
+          </div>
+          <p class="hint">
+            机器人发章收藏规则未改：首章≥500 必 1～5；非首章 10%×1～3；日上限 10。
+            变的是：每次收藏只走新版互动表（+200~300×1），不再走旧版 4 次×(100~500)。
+            补量在区间内连续随机；当日触顶后停补。
+            旧规则日更稳态：章节+收藏链路易触 8000 顶栏，趋势图波动极小（见对照灰线）。
+          </p>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <h2>每日最终虚拟人气<span class="pill">新规则</span><span class="pill">含字数阶段上限</span></h2>
+            <div class="chart-box"><canvas id="chartDaily"></canvas></div>
+          </div>
+          <div class="card">
+            <h2>新规则构成：更新补量 / 互动补量 / 触顶停补</h2>
+            <div class="chart-box sm"><canvas id="chartParts"></canvas></div>
+          </div>
         </div>
       </div>
-
-      
-      <div class="summary-toolbar card section">
-        <h2>内容总结 · 发布</h2>
-        <p class="sub">本地服务下会自动写入项目根目录 <code>summaries.json</code>；点推送会同步到 GitHub 公开链接。</p>
-        <div class="summary-toolbar-actions">
-          <button type="button" id="summary-publish-btn" class="primary-btn">写入并推送到 GitHub</button>
-          <button type="button" id="summary-save-root-btn" class="chip">保存到项目根目录</button>
-          <button type="button" id="summary-import-btn" class="chip">导入 JSON</button>
-          <input type="file" id="summary-import-file" accept="application/json,.json" hidden />
-        </div>
-        <p id="summary-publish-msg" class="form-msg" aria-live="polite"></p>
-      </div>
-
-
-      <div class="top-tabs" role="tablist">
-        <button type="button" class="tab active" data-tab="funnel" role="tab" aria-selected="true">转化看板</button>
-        <button type="button" class="tab" data-tab="income" role="tab" aria-selected="false">收入对比</button>
-      </div>
-
-      <div class="tab-panel active" id="panel-funnel" role="tabpanel">
-        
-      <section class="dataset-block compare-block" id="mode-compare">
-        <div class="dataset-head">
-          <h2 class="dataset-title">续写模式 vs ai模式 · 章节转化对比</h2>
-          <div class="meta">统一按「章节」口径对比：续写用创建总章数/已发布章节数，ai 用创建总次数/已发布总次数。含留存/转化率与绝对数量。</div>
-        </div>
-        <div class="grid">
-          
-        <div class="card">
-          <h2>创建留存率对比</h2>
-          <p class="sub">续写模式 vs ai模式（章节口径）</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="72.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>1: 100%</title></rect><text x="81.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="96.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>1: 100%</title></rect><text x="105.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="163.8" y="134.2" width="18.0" height="49.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>2: 34%</title></rect><text x="172.8" y="130.2" text-anchor="middle" class="cmp-val">34%</text><rect x="187.8" y="174.9" width="18.0" height="9.1" rx="3" fill="#1f9d63" opacity="0.92"><title>2: 6%</title></rect><text x="196.8" y="170.9" text-anchor="middle" class="cmp-val">6%</text><rect x="255.0" y="156.8" width="18.0" height="27.2" rx="3" fill="#2f7ce0" opacity="0.92"><title>3: 19%</title></rect><text x="264.0" y="152.8" text-anchor="middle" class="cmp-val">19%</text><rect x="279.0" y="181.6" width="18.0" height="2.4" rx="3" fill="#1f9d63" opacity="0.92"><title>3: 2%</title></rect><text x="288.0" y="177.6" text-anchor="middle" class="cmp-val">2%</text><rect x="346.2" y="174.6" width="18.0" height="9.4" rx="3" fill="#2f7ce0" opacity="0.92"><title>4: 7%</title></rect><text x="355.2" y="170.6" text-anchor="middle" class="cmp-val">7%</text><rect x="370.2" y="182.7" width="18.0" height="1.3" rx="3" fill="#1f9d63" opacity="0.92"><title>4: 1%</title></rect><text x="379.2" y="178.7" text-anchor="middle" class="cmp-val">1%</text><rect x="437.4" y="179.5" width="18.0" height="4.5" rx="3" fill="#2f7ce0" opacity="0.92"><title>5: 3%</title></rect><text x="446.4" y="175.5" text-anchor="middle" class="cmp-val">3%</text><rect x="461.4" y="183.2" width="18.0" height="1.0" rx="3" fill="#1f9d63" opacity="0.92"><title>5: 1%</title></rect><text x="470.4" y="179.2" text-anchor="middle" class="cmp-val">1%</text>
-      <text x="93.6" y="208" text-anchor="middle" class="cmp-axis">1</text><text x="184.8" y="208" text-anchor="middle" class="cmp-axis">2</text><text x="276.0" y="208" text-anchor="middle" class="cmp-axis">3</text><text x="367.2" y="208" text-anchor="middle" class="cmp-axis">4</text><text x="458.4" y="208" text-anchor="middle" class="cmp-axis">5</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写模式</span>
-      <span><i style="background:#1f9d63"></i>ai模式</span>
-    </div>
-
-        </div>
-        <div class="card">
-          <h2>发布留存率对比</h2>
-          <p class="sub">续写模式 vs ai模式（章节口径）</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="72.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>1: 100%</title></rect><text x="81.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="96.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>1: 100%</title></rect><text x="105.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="163.8" y="122.3" width="18.0" height="61.7" rx="3" fill="#2f7ce0" opacity="0.92"><title>2: 43%</title></rect><text x="172.8" y="118.3" text-anchor="middle" class="cmp-val">43%</text><rect x="187.8" y="159.9" width="18.0" height="24.1" rx="3" fill="#1f9d63" opacity="0.92"><title>2: 17%</title></rect><text x="196.8" y="155.9" text-anchor="middle" class="cmp-val">17%</text><rect x="255.0" y="142.2" width="18.0" height="41.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>3: 29%</title></rect><text x="264.0" y="138.2" text-anchor="middle" class="cmp-val">29%</text><rect x="279.0" y="172.0" width="18.0" height="12.0" rx="3" fill="#1f9d63" opacity="0.92"><title>3: 8%</title></rect><text x="288.0" y="168.0" text-anchor="middle" class="cmp-val">8%</text><rect x="346.2" y="172.1" width="18.0" height="11.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>4: 8%</title></rect><text x="355.2" y="168.1" text-anchor="middle" class="cmp-val">8%</text><rect x="370.2" y="175.5" width="18.0" height="8.5" rx="3" fill="#1f9d63" opacity="0.92"><title>4: 6%</title></rect><text x="379.2" y="171.5" text-anchor="middle" class="cmp-val">6%</text><rect x="437.4" y="176.7" width="18.0" height="7.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>5: 5%</title></rect><text x="446.4" y="172.7" text-anchor="middle" class="cmp-val">5%</text><rect x="461.4" y="176.2" width="18.0" height="7.8" rx="3" fill="#1f9d63" opacity="0.92"><title>5: 5%</title></rect><text x="470.4" y="172.2" text-anchor="middle" class="cmp-val">5%</text>
-      <text x="93.6" y="208" text-anchor="middle" class="cmp-axis">1</text><text x="184.8" y="208" text-anchor="middle" class="cmp-axis">2</text><text x="276.0" y="208" text-anchor="middle" class="cmp-axis">3</text><text x="367.2" y="208" text-anchor="middle" class="cmp-axis">4</text><text x="458.4" y="208" text-anchor="middle" class="cmp-axis">5</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写模式</span>
-      <span><i style="background:#1f9d63"></i>ai模式</span>
-    </div>
-
-        </div>
-        </div>
-        <div class="grid">
-          
-        <div class="card">
-          <h2>创建转化率对比</h2>
-          <p class="sub">续写模式 vs ai模式（章节口径）</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="72.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>1: 100%</title></rect><text x="81.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="96.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>1: 100%</title></rect><text x="105.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="163.8" y="134.2" width="18.0" height="49.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>2: 34%</title></rect><text x="172.8" y="130.2" text-anchor="middle" class="cmp-val">34%</text><rect x="187.8" y="174.9" width="18.0" height="9.1" rx="3" fill="#1f9d63" opacity="0.92"><title>2: 6%</title></rect><text x="196.8" y="170.9" text-anchor="middle" class="cmp-val">6%</text><rect x="255.0" y="105.1" width="18.0" height="78.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>3: 55%</title></rect><text x="264.0" y="101.1" text-anchor="middle" class="cmp-val">55%</text><rect x="279.0" y="145.6" width="18.0" height="38.4" rx="3" fill="#1f9d63" opacity="0.92"><title>3: 27%</title></rect><text x="288.0" y="141.6" text-anchor="middle" class="cmp-val">27%</text><rect x="346.2" y="133.9" width="18.0" height="50.1" rx="3" fill="#2f7ce0" opacity="0.92"><title>4: 35%</title></rect><text x="355.2" y="129.9" text-anchor="middle" class="cmp-val">35%</text><rect x="370.2" y="104.5" width="18.0" height="79.5" rx="3" fill="#1f9d63" opacity="0.92"><title>4: 55%</title></rect><text x="379.2" y="100.5" text-anchor="middle" class="cmp-val">55%</text><rect x="437.4" y="115.4" width="18.0" height="68.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>5: 48%</title></rect><text x="446.4" y="111.4" text-anchor="middle" class="cmp-val">48%</text><rect x="461.4" y="98.5" width="18.0" height="85.5" rx="3" fill="#1f9d63" opacity="0.92"><title>5: 59%</title></rect><text x="470.4" y="94.5" text-anchor="middle" class="cmp-val">59%</text>
-      <text x="93.6" y="208" text-anchor="middle" class="cmp-axis">1</text><text x="184.8" y="208" text-anchor="middle" class="cmp-axis">2</text><text x="276.0" y="208" text-anchor="middle" class="cmp-axis">3</text><text x="367.2" y="208" text-anchor="middle" class="cmp-axis">4</text><text x="458.4" y="208" text-anchor="middle" class="cmp-axis">5</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写模式</span>
-      <span><i style="background:#1f9d63"></i>ai模式</span>
-    </div>
-
-        </div>
-        <div class="card">
-          <h2>发布转化率对比</h2>
-          <p class="sub">续写模式 vs ai模式（章节口径）</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="72.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>1: 100%</title></rect><text x="81.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="96.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>1: 100%</title></rect><text x="105.6" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="163.8" y="122.3" width="18.0" height="61.7" rx="3" fill="#2f7ce0" opacity="0.92"><title>2: 43%</title></rect><text x="172.8" y="118.3" text-anchor="middle" class="cmp-val">43%</text><rect x="187.8" y="159.9" width="18.0" height="24.1" rx="3" fill="#1f9d63" opacity="0.92"><title>2: 17%</title></rect><text x="196.8" y="155.9" text-anchor="middle" class="cmp-val">17%</text><rect x="255.0" y="86.1" width="18.0" height="97.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>3: 68%</title></rect><text x="264.0" y="82.1" text-anchor="middle" class="cmp-val">68%</text><rect x="279.0" y="111.8" width="18.0" height="72.2" rx="3" fill="#1f9d63" opacity="0.92"><title>3: 50%</title></rect><text x="288.0" y="107.8" text-anchor="middle" class="cmp-val">50%</text><rect x="346.2" y="143.1" width="18.0" height="40.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>4: 28%</title></rect><text x="355.2" y="139.1" text-anchor="middle" class="cmp-val">28%</text><rect x="370.2" y="82.1" width="18.0" height="101.9" rx="3" fill="#1f9d63" opacity="0.92"><title>4: 71%</title></rect><text x="379.2" y="78.1" text-anchor="middle" class="cmp-val">71%</text><rect x="437.4" y="94.8" width="18.0" height="89.2" rx="3" fill="#2f7ce0" opacity="0.92"><title>5: 62%</title></rect><text x="446.4" y="90.8" text-anchor="middle" class="cmp-val">62%</text><rect x="461.4" y="51.7" width="18.0" height="132.3" rx="3" fill="#1f9d63" opacity="0.92"><title>5: 92%</title></rect><text x="470.4" y="47.7" text-anchor="middle" class="cmp-val">92%</text>
-      <text x="93.6" y="208" text-anchor="middle" class="cmp-axis">1</text><text x="184.8" y="208" text-anchor="middle" class="cmp-axis">2</text><text x="276.0" y="208" text-anchor="middle" class="cmp-axis">3</text><text x="367.2" y="208" text-anchor="middle" class="cmp-axis">4</text><text x="458.4" y="208" text-anchor="middle" class="cmp-axis">5</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写模式</span>
-      <span><i style="background:#1f9d63"></i>ai模式</span>
-    </div>
-
-        </div>
-        </div>
-        <div class="grid">
-          
-        <div class="card">
-          <h2>创建数量对比</h2>
-          <p class="sub">续写模式 vs ai模式（章节口径）</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0</text><line x1="48" x2="504" y1="142.5" y2="142.5" class="cmp-grid"/><text x="42" y="145.5" text-anchor="end" class="cmp-axis">839</text><line x1="48" x2="504" y1="101.0" y2="101.0" class="cmp-grid"/><text x="42" y="104.0" text-anchor="end" class="cmp-axis">1.7k</text><line x1="48" x2="504" y1="59.5" y2="59.5" class="cmp-grid"/><text x="42" y="62.5" text-anchor="end" class="cmp-axis">2.5k</text><line x1="48" x2="504" y1="18.0" y2="18.0" class="cmp-grid"/><text x="42" y="21.0" text-anchor="end" class="cmp-axis">3.4k</text>
-      <rect x="72.6" y="63.2" width="18.0" height="120.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>1: 2,444</title></rect><text x="81.6" y="59.2" text-anchor="middle" class="cmp-val">2,444</text><rect x="96.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>1: 2,920</title></rect><text x="105.6" y="35.7" text-anchor="middle" class="cmp-val">2,920</text><rect x="163.8" y="142.3" width="18.0" height="41.7" rx="3" fill="#2f7ce0" opacity="0.92"><title>2: 843</title></rect><text x="172.8" y="138.3" text-anchor="middle" class="cmp-val">843</text><rect x="187.8" y="174.9" width="18.0" height="9.1" rx="3" fill="#1f9d63" opacity="0.92"><title>2: 184</title></rect><text x="196.8" y="170.9" text-anchor="middle" class="cmp-val">184</text><rect x="255.0" y="161.2" width="18.0" height="22.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>3: 461</title></rect><text x="264.0" y="157.2" text-anchor="middle" class="cmp-val">461</text><rect x="279.0" y="181.6" width="18.0" height="2.4" rx="3" fill="#1f9d63" opacity="0.92"><title>3: 49</title></rect><text x="288.0" y="177.6" text-anchor="middle" class="cmp-val">49</text><rect x="346.2" y="176.1" width="18.0" height="7.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>4: 160</title></rect><text x="355.2" y="172.1" text-anchor="middle" class="cmp-val">160</text><rect x="370.2" y="182.7" width="18.0" height="1.3" rx="3" fill="#1f9d63" opacity="0.92"><title>4: 27</title></rect><text x="379.2" y="178.7" text-anchor="middle" class="cmp-val">27</text><rect x="437.4" y="180.2" width="18.0" height="3.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>5: 76</title></rect><text x="446.4" y="176.2" text-anchor="middle" class="cmp-val">76</text><rect x="461.4" y="183.2" width="18.0" height="1.0" rx="3" fill="#1f9d63" opacity="0.92"><title>5: 16</title></rect><text x="470.4" y="179.2" text-anchor="middle" class="cmp-val">16</text>
-      <text x="93.6" y="208" text-anchor="middle" class="cmp-axis">1</text><text x="184.8" y="208" text-anchor="middle" class="cmp-axis">2</text><text x="276.0" y="208" text-anchor="middle" class="cmp-axis">3</text><text x="367.2" y="208" text-anchor="middle" class="cmp-axis">4</text><text x="458.4" y="208" text-anchor="middle" class="cmp-axis">5</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写模式</span>
-      <span><i style="background:#1f9d63"></i>ai模式</span>
-    </div>
-
-        </div>
-        <div class="card">
-          <h2>发布数量对比</h2>
-          <p class="sub">续写模式 vs ai模式（章节口径）</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0</text><line x1="48" x2="504" y1="142.5" y2="142.5" class="cmp-grid"/><text x="42" y="145.5" text-anchor="end" class="cmp-axis">119</text><line x1="48" x2="504" y1="101.0" y2="101.0" class="cmp-grid"/><text x="42" y="104.0" text-anchor="end" class="cmp-axis">238</text><line x1="48" x2="504" y1="59.5" y2="59.5" class="cmp-grid"/><text x="42" y="62.5" text-anchor="end" class="cmp-axis">357</text><line x1="48" x2="504" y1="18.0" y2="18.0" class="cmp-grid"/><text x="42" y="21.0" text-anchor="end" class="cmp-axis">476</text>
-      <rect x="72.6" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>1: 414</title></rect><text x="81.6" y="35.7" text-anchor="middle" class="cmp-val">414</text><rect x="96.6" y="112.9" width="18.0" height="71.1" rx="3" fill="#1f9d63" opacity="0.92"><title>1: 204</title></rect><text x="105.6" y="108.9" text-anchor="middle" class="cmp-val">204</text><rect x="163.8" y="122.3" width="18.0" height="61.7" rx="3" fill="#2f7ce0" opacity="0.92"><title>2: 177</title></rect><text x="172.8" y="118.3" text-anchor="middle" class="cmp-val">177</text><rect x="187.8" y="172.1" width="18.0" height="11.9" rx="3" fill="#1f9d63" opacity="0.92"><title>2: 34</title></rect><text x="196.8" y="168.1" text-anchor="middle" class="cmp-val">34</text><rect x="255.0" y="142.2" width="18.0" height="41.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>3: 120</title></rect><text x="264.0" y="138.2" text-anchor="middle" class="cmp-val">120</text><rect x="279.0" y="178.1" width="18.0" height="5.9" rx="3" fill="#1f9d63" opacity="0.92"><title>3: 17</title></rect><text x="288.0" y="174.1" text-anchor="middle" class="cmp-val">17</text><rect x="346.2" y="172.1" width="18.0" height="11.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>4: 34</title></rect><text x="355.2" y="168.1" text-anchor="middle" class="cmp-val">34</text><rect x="370.2" y="179.8" width="18.0" height="4.2" rx="3" fill="#1f9d63" opacity="0.92"><title>4: 12</title></rect><text x="379.2" y="175.8" text-anchor="middle" class="cmp-val">12</text><rect x="437.4" y="176.7" width="18.0" height="7.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>5: 21</title></rect><text x="446.4" y="172.7" text-anchor="middle" class="cmp-val">21</text><rect x="461.4" y="180.2" width="18.0" height="3.8" rx="3" fill="#1f9d63" opacity="0.92"><title>5: 11</title></rect><text x="470.4" y="176.2" text-anchor="middle" class="cmp-val">11</text>
-      <text x="93.6" y="208" text-anchor="middle" class="cmp-axis">1</text><text x="184.8" y="208" text-anchor="middle" class="cmp-axis">2</text><text x="276.0" y="208" text-anchor="middle" class="cmp-axis">3</text><text x="367.2" y="208" text-anchor="middle" class="cmp-axis">4</text><text x="458.4" y="208" text-anchor="middle" class="cmp-axis">5</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写模式</span>
-      <span><i style="background:#1f9d63"></i>ai模式</span>
-    </div>
-
-        </div>
-        </div>
-        <div class="card section">
-          <h2>对比明细</h2>
-          <p class="sub">数量为各阶段绝对值；留存率 = 当前 / 第1章；转化率 = 当前 / 上一章。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>阶段</th>
-                  <th>续写·创建数</th>
-                  <th>ai·创建数</th>
-                  <th>续写·发布数</th>
-                  <th>ai·发布数</th>
-                  <th>续写·创建留存</th>
-                  <th>ai·创建留存</th>
-                  <th>续写·发布留存</th>
-                  <th>ai·发布留存</th>
-                  <th>续写·创建转化</th>
-                  <th>ai·创建转化</th>
-                  <th>续写·发布转化</th>
-                  <th>ai·发布转化</th>
-                </tr>
-              </thead>
-              <tbody><tr><td>1</td><td>2,444</td><td>2,920</td><td>414</td><td>204</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr><tr><td>2</td><td>843</td><td>184</td><td>177</td><td>34</td><td>34.5%</td><td>6.3%</td><td>42.8%</td><td>16.7%</td><td>34.5%</td><td>6.3%</td><td>42.8%</td><td>16.7%</td></tr><tr><td>3</td><td>461</td><td>49</td><td>120</td><td>17</td><td>18.9%</td><td>1.7%</td><td>29.0%</td><td>8.3%</td><td>54.7%</td><td>26.6%</td><td>67.8%</td><td>50.0%</td></tr><tr><td>4</td><td>160</td><td>27</td><td>34</td><td>12</td><td>6.5%</td><td>0.9%</td><td>8.2%</td><td>5.9%</td><td>34.7%</td><td>55.1%</td><td>28.3%</td><td>70.6%</td></tr><tr><td>5</td><td>76</td><td>16</td><td>21</td><td>11</td><td>3.1%</td><td>0.5%</td><td>5.1%</td><td>5.4%</td><td>47.5%</td><td>59.3%</td><td>61.8%</td><td>91.7%</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="mode-compare">
-        <div class="summary-head">
-          <h3>内容总结 · 续写模式 vs ai模式</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · 续写模式 vs ai模式"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
-      </div>
-
-
-        
-      <section class="dataset-block compare-block" id="books-table-compare">
-        <div class="dataset-head">
-          <h2 class="dataset-title">续写书籍 vs AI书籍 · 书级对比</h2>
-          <div class="meta">口径统一为创建/发布章节数量漏斗；续写侧另展示 ≥90次/≥3章、≥60次/≥2章占比。续写总表来自有续写记录的书，AI总表来自 bookType=6。 AI 侧当前 SQL 不含续写次数。</div>
-        </div>
-
-        <div class="kpis">
-          <div class="kpi create">
-            <div class="val">2,444</div>
-            <div class="lab">续写书籍总数</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">2,513</div>
-            <div class="lab">AI书籍总数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">105 / 25.8%</div>
-            <div class="lab">≥90次占≥3章（续写）</div>
-          </div>
-          <div class="kpi">
-            <div class="val">185 / 23.3%</div>
-            <div class="lab">≥60次占≥2章（续写）</div>
-          </div>
-          
-          <div class="kpi publish">
-            <div class="val">436</div>
-            <div class="lab">续写侧 · 有发布章节</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">192</div>
-            <div class="lab">AI侧 · 有发布章节</div>
-          </div>
-        </div>
-
-        <div class="grid">
-          <div class="card">
-            <h2>创建章节留存率对比</h2>
-            <p class="sub">达到创建≥N章书籍数 / 创建≥1章书籍数</p>
-            
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="65.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥1章: 100%</title></rect><text x="74.0" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="89.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥1章: 100%</title></rect><text x="98.0" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="141.0" y="135.2" width="18.0" height="48.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥2章: 34%</title></rect><text x="150.0" y="131.2" text-anchor="middle" class="cmp-val">34%</text><rect x="165.0" y="175.1" width="18.0" height="8.9" rx="3" fill="#1f9d63" opacity="0.92"><title>≥2章: 6%</title></rect><text x="174.0" y="171.1" text-anchor="middle" class="cmp-val">6%</text><rect x="217.0" y="159.0" width="18.0" height="25.0" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥3章: 17%</title></rect><text x="226.0" y="155.0" text-anchor="middle" class="cmp-val">17%</text><rect x="241.0" y="181.5" width="18.0" height="2.5" rx="3" fill="#1f9d63" opacity="0.92"><title>≥3章: 2%</title></rect><text x="250.0" y="177.5" text-anchor="middle" class="cmp-val">2%</text><rect x="293.0" y="176.7" width="18.0" height="7.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥4章: 5%</title></rect><text x="302.0" y="172.7" text-anchor="middle" class="cmp-val">5%</text><rect x="317.0" y="182.7" width="18.0" height="1.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥4章: 1%</title></rect><text x="326.0" y="178.7" text-anchor="middle" class="cmp-val">1%</text><rect x="369.0" y="181.2" width="18.0" height="2.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥5章: 2%</title></rect><text x="378.0" y="177.2" text-anchor="middle" class="cmp-val">2%</text><rect x="393.0" y="183.2" width="18.0" height="1.0" rx="3" fill="#1f9d63" opacity="0.92"><title>≥5章: 1%</title></rect><text x="402.0" y="179.2" text-anchor="middle" class="cmp-val">1%</text><rect x="445.0" y="182.5" width="18.0" height="1.5" rx="3" fill="#2f7ce0" opacity="0.92"><title>5章以后(&gt;5): 1%</title></rect><text x="454.0" y="178.5" text-anchor="middle" class="cmp-val">1%</text><rect x="469.0" y="183.3" width="18.0" height="1.0" rx="3" fill="#1f9d63" opacity="0.92"><title>5章以后(&gt;5): 0%</title></rect><text x="478.0" y="179.3" text-anchor="middle" class="cmp-val">0%</text>
-      <text x="86.0" y="208" text-anchor="middle" class="cmp-axis">≥1章</text><text x="162.0" y="208" text-anchor="middle" class="cmp-axis">≥2章</text><text x="238.0" y="208" text-anchor="middle" class="cmp-axis">≥3章</text><text x="314.0" y="208" text-anchor="middle" class="cmp-axis">≥4章</text><text x="390.0" y="208" text-anchor="middle" class="cmp-axis">≥5章</text><text x="466.0" y="208" text-anchor="middle" class="cmp-axis">5章以后(&gt;5)</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写书籍</span>
-      <span><i style="background:#1f9d63"></i>AI书籍</span>
-    </div>
-
-          </div>
-          <div class="card">
-            <h2>创建章节转化率对比</h2>
-            <p class="sub">当前档书籍数 / 上一档书籍数</p>
-            
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="65.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥1章: 100%</title></rect><text x="74.0" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="89.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥1章: 100%</title></rect><text x="98.0" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="141.0" y="135.2" width="18.0" height="48.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥2章: 34%</title></rect><text x="150.0" y="131.2" text-anchor="middle" class="cmp-val">34%</text><rect x="165.0" y="175.1" width="18.0" height="8.9" rx="3" fill="#1f9d63" opacity="0.92"><title>≥2章: 6%</title></rect><text x="174.0" y="171.1" text-anchor="middle" class="cmp-val">6%</text><rect x="217.0" y="110.0" width="18.0" height="74.0" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥3章: 51%</title></rect><text x="226.0" y="106.0" text-anchor="middle" class="cmp-val">51%</text><rect x="241.0" y="143.5" width="18.0" height="40.5" rx="3" fill="#1f9d63" opacity="0.92"><title>≥3章: 28%</title></rect><text x="250.0" y="139.5" text-anchor="middle" class="cmp-val">28%</text><rect x="293.0" y="142.1" width="18.0" height="41.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥4章: 29%</title></rect><text x="302.0" y="138.1" text-anchor="middle" class="cmp-val">29%</text><rect x="317.0" y="110.1" width="18.0" height="73.9" rx="3" fill="#1f9d63" opacity="0.92"><title>≥4章: 51%</title></rect><text x="326.0" y="106.1" text-anchor="middle" class="cmp-val">51%</text><rect x="369.0" y="127.7" width="18.0" height="56.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥5章: 39%</title></rect><text x="378.0" y="123.7" text-anchor="middle" class="cmp-val">39%</text><rect x="393.0" y="94.6" width="18.0" height="89.4" rx="3" fill="#1f9d63" opacity="0.92"><title>≥5章: 62%</title></rect><text x="402.0" y="90.6" text-anchor="middle" class="cmp-val">62%</text><rect x="445.0" y="105.6" width="18.0" height="78.4" rx="3" fill="#2f7ce0" opacity="0.92"><title>5章以后(&gt;5): 54%</title></rect><text x="454.0" y="101.6" text-anchor="middle" class="cmp-val">54%</text><rect x="469.0" y="61.9" width="18.0" height="122.1" rx="3" fill="#1f9d63" opacity="0.92"><title>5章以后(&gt;5): 85%</title></rect><text x="478.0" y="57.9" text-anchor="middle" class="cmp-val">85%</text>
-      <text x="86.0" y="208" text-anchor="middle" class="cmp-axis">≥1章</text><text x="162.0" y="208" text-anchor="middle" class="cmp-axis">≥2章</text><text x="238.0" y="208" text-anchor="middle" class="cmp-axis">≥3章</text><text x="314.0" y="208" text-anchor="middle" class="cmp-axis">≥4章</text><text x="390.0" y="208" text-anchor="middle" class="cmp-axis">≥5章</text><text x="466.0" y="208" text-anchor="middle" class="cmp-axis">5章以后(&gt;5)</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写书籍</span>
-      <span><i style="background:#1f9d63"></i>AI书籍</span>
-    </div>
-
-          </div>
-        </div>
-        
-        <div class="grid">
-          <div class="card">
-            <h2>发布章节留存率对比</h2>
-            <p class="sub">已发布≥N章书籍数 / 已发布≥1章书籍数</p>
-            
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0%</text><line x1="48" x2="504" y1="147.9" y2="147.9" class="cmp-grid"/><text x="42" y="150.9" text-anchor="end" class="cmp-axis">25%</text><line x1="48" x2="504" y1="111.8" y2="111.8" class="cmp-grid"/><text x="42" y="114.8" text-anchor="end" class="cmp-axis">50%</text><line x1="48" x2="504" y1="75.7" y2="75.7" class="cmp-grid"/><text x="42" y="78.7" text-anchor="end" class="cmp-axis">75%</text><line x1="48" x2="504" y1="39.7" y2="39.7" class="cmp-grid"/><text x="42" y="42.7" text-anchor="end" class="cmp-axis">100%</text>
-      <rect x="65.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥1章: 100%</title></rect><text x="74.0" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="89.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥1章: 100%</title></rect><text x="98.0" y="35.7" text-anchor="middle" class="cmp-val">100%</text><rect x="141.0" y="118.4" width="18.0" height="65.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥2章: 45%</title></rect><text x="150.0" y="114.4" text-anchor="middle" class="cmp-val">45%</text><rect x="165.0" y="160.7" width="18.0" height="23.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥2章: 16%</title></rect><text x="174.0" y="156.7" text-anchor="middle" class="cmp-val">16%</text><rect x="217.0" y="148.9" width="18.0" height="35.1" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥3章: 24%</title></rect><text x="226.0" y="144.9" text-anchor="middle" class="cmp-val">24%</text><rect x="241.0" y="172.0" width="18.0" height="12.0" rx="3" fill="#1f9d63" opacity="0.92"><title>≥3章: 8%</title></rect><text x="250.0" y="168.0" text-anchor="middle" class="cmp-val">8%</text><rect x="293.0" y="171.8" width="18.0" height="12.2" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥4章: 8%</title></rect><text x="302.0" y="167.8" text-anchor="middle" class="cmp-val">8%</text><rect x="317.0" y="174.2" width="18.0" height="9.8" rx="3" fill="#1f9d63" opacity="0.92"><title>≥4章: 7%</title></rect><text x="326.0" y="170.2" text-anchor="middle" class="cmp-val">7%</text><rect x="369.0" y="178.4" width="18.0" height="5.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥5章: 4%</title></rect><text x="378.0" y="174.4" text-anchor="middle" class="cmp-val">4%</text><rect x="393.0" y="175.7" width="18.0" height="8.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥5章: 6%</title></rect><text x="402.0" y="171.7" text-anchor="middle" class="cmp-val">6%</text><rect x="445.0" y="180.4" width="18.0" height="3.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>5章以后(&gt;5): 3%</title></rect><text x="454.0" y="176.4" text-anchor="middle" class="cmp-val">3%</text><rect x="469.0" y="178.0" width="18.0" height="6.0" rx="3" fill="#1f9d63" opacity="0.92"><title>5章以后(&gt;5): 4%</title></rect><text x="478.0" y="174.0" text-anchor="middle" class="cmp-val">4%</text>
-      <text x="86.0" y="208" text-anchor="middle" class="cmp-axis">≥1章</text><text x="162.0" y="208" text-anchor="middle" class="cmp-axis">≥2章</text><text x="238.0" y="208" text-anchor="middle" class="cmp-axis">≥3章</text><text x="314.0" y="208" text-anchor="middle" class="cmp-axis">≥4章</text><text x="390.0" y="208" text-anchor="middle" class="cmp-axis">≥5章</text><text x="466.0" y="208" text-anchor="middle" class="cmp-axis">5章以后(&gt;5)</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写书籍</span>
-      <span><i style="background:#1f9d63"></i>AI书籍</span>
-    </div>
-
-          </div>
-          <div class="card">
-            <h2>发布章节 · 书籍数对比</h2>
-            <p class="sub">各档绝对书籍数（按已发布章节数）</p>
-            
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0</text><line x1="48" x2="504" y1="142.5" y2="142.5" class="cmp-grid"/><text x="42" y="145.5" text-anchor="end" class="cmp-axis">125</text><line x1="48" x2="504" y1="101.0" y2="101.0" class="cmp-grid"/><text x="42" y="104.0" text-anchor="end" class="cmp-axis">251</text><line x1="48" x2="504" y1="59.5" y2="59.5" class="cmp-grid"/><text x="42" y="62.5" text-anchor="end" class="cmp-axis">376</text><line x1="48" x2="504" y1="18.0" y2="18.0" class="cmp-grid"/><text x="42" y="21.0" text-anchor="end" class="cmp-axis">501</text>
-      <rect x="65.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥1章: 436</title></rect><text x="74.0" y="35.7" text-anchor="middle" class="cmp-val">436</text><rect x="89.0" y="120.4" width="18.0" height="63.6" rx="3" fill="#1f9d63" opacity="0.92"><title>≥1章: 192</title></rect><text x="98.0" y="116.4" text-anchor="middle" class="cmp-val">192</text><rect x="141.0" y="118.4" width="18.0" height="65.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥2章: 198</title></rect><text x="150.0" y="114.4" text-anchor="middle" class="cmp-val">198</text><rect x="165.0" y="173.7" width="18.0" height="10.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥2章: 31</title></rect><text x="174.0" y="169.7" text-anchor="middle" class="cmp-val">31</text><rect x="217.0" y="148.9" width="18.0" height="35.1" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥3章: 106</title></rect><text x="226.0" y="144.9" text-anchor="middle" class="cmp-val">106</text><rect x="241.0" y="178.7" width="18.0" height="5.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥3章: 16</title></rect><text x="250.0" y="174.7" text-anchor="middle" class="cmp-val">16</text><rect x="293.0" y="171.8" width="18.0" height="12.2" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥4章: 37</title></rect><text x="302.0" y="167.8" text-anchor="middle" class="cmp-val">37</text><rect x="317.0" y="179.7" width="18.0" height="4.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥4章: 13</title></rect><text x="326.0" y="175.7" text-anchor="middle" class="cmp-val">13</text><rect x="369.0" y="178.4" width="18.0" height="5.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥5章: 17</title></rect><text x="378.0" y="174.4" text-anchor="middle" class="cmp-val">17</text><rect x="393.0" y="180.4" width="18.0" height="3.6" rx="3" fill="#1f9d63" opacity="0.92"><title>≥5章: 11</title></rect><text x="402.0" y="176.4" text-anchor="middle" class="cmp-val">11</text><rect x="445.0" y="180.4" width="18.0" height="3.6" rx="3" fill="#2f7ce0" opacity="0.92"><title>5章以后(&gt;5): 11</title></rect><text x="454.0" y="176.4" text-anchor="middle" class="cmp-val">11</text><rect x="469.0" y="181.4" width="18.0" height="2.6" rx="3" fill="#1f9d63" opacity="0.92"><title>5章以后(&gt;5): 8</title></rect><text x="478.0" y="177.4" text-anchor="middle" class="cmp-val">8</text>
-      <text x="86.0" y="208" text-anchor="middle" class="cmp-axis">≥1章</text><text x="162.0" y="208" text-anchor="middle" class="cmp-axis">≥2章</text><text x="238.0" y="208" text-anchor="middle" class="cmp-axis">≥3章</text><text x="314.0" y="208" text-anchor="middle" class="cmp-axis">≥4章</text><text x="390.0" y="208" text-anchor="middle" class="cmp-axis">≥5章</text><text x="466.0" y="208" text-anchor="middle" class="cmp-axis">5章以后(&gt;5)</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写书籍</span>
-      <span><i style="background:#1f9d63"></i>AI书籍</span>
-    </div>
-
-          </div>
-        </div>
-        <div class="grid">
-          <div class="card">
-            <h2>创建章节 · 书籍数对比</h2>
-            <p class="sub">各档绝对书籍数</p>
-            
-    <svg class="cmp-svg" viewBox="0 0 520 220" role="img" aria-label="对比图">
-      <line x1="48" x2="504" y1="184.0" y2="184.0" class="cmp-grid"/><text x="42" y="187.0" text-anchor="end" class="cmp-axis">0</text><line x1="48" x2="504" y1="142.5" y2="142.5" class="cmp-grid"/><text x="42" y="145.5" text-anchor="end" class="cmp-axis">682</text><line x1="48" x2="504" y1="101.0" y2="101.0" class="cmp-grid"/><text x="42" y="104.0" text-anchor="end" class="cmp-axis">1.4k</text><line x1="48" x2="504" y1="59.5" y2="59.5" class="cmp-grid"/><text x="42" y="62.5" text-anchor="end" class="cmp-axis">2.0k</text><line x1="48" x2="504" y1="18.0" y2="18.0" class="cmp-grid"/><text x="42" y="21.0" text-anchor="end" class="cmp-axis">2.7k</text>
-      <rect x="65.0" y="41.1" width="18.0" height="142.9" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥1章: 2,349</title></rect><text x="74.0" y="37.1" text-anchor="middle" class="cmp-val">2,349</text><rect x="89.0" y="39.7" width="18.0" height="144.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥1章: 2,373</title></rect><text x="98.0" y="35.7" text-anchor="middle" class="cmp-val">2,373</text><rect x="141.0" y="135.7" width="18.0" height="48.3" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥2章: 794</title></rect><text x="150.0" y="131.7" text-anchor="middle" class="cmp-val">794</text><rect x="165.0" y="175.1" width="18.0" height="8.9" rx="3" fill="#1f9d63" opacity="0.92"><title>≥2章: 146</title></rect><text x="174.0" y="171.1" text-anchor="middle" class="cmp-val">146</text><rect x="217.0" y="159.2" width="18.0" height="24.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥3章: 407</title></rect><text x="226.0" y="155.2" text-anchor="middle" class="cmp-val">407</text><rect x="241.0" y="181.5" width="18.0" height="2.5" rx="3" fill="#1f9d63" opacity="0.92"><title>≥3章: 41</title></rect><text x="250.0" y="177.5" text-anchor="middle" class="cmp-val">41</text><rect x="293.0" y="176.8" width="18.0" height="7.2" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥4章: 118</title></rect><text x="302.0" y="172.8" text-anchor="middle" class="cmp-val">118</text><rect x="317.0" y="182.7" width="18.0" height="1.3" rx="3" fill="#1f9d63" opacity="0.92"><title>≥4章: 21</title></rect><text x="326.0" y="178.7" text-anchor="middle" class="cmp-val">21</text><rect x="369.0" y="181.2" width="18.0" height="2.8" rx="3" fill="#2f7ce0" opacity="0.92"><title>≥5章: 46</title></rect><text x="378.0" y="177.2" text-anchor="middle" class="cmp-val">46</text><rect x="393.0" y="183.2" width="18.0" height="1.0" rx="3" fill="#1f9d63" opacity="0.92"><title>≥5章: 13</title></rect><text x="402.0" y="179.2" text-anchor="middle" class="cmp-val">13</text><rect x="445.0" y="182.5" width="18.0" height="1.5" rx="3" fill="#2f7ce0" opacity="0.92"><title>5章以后(&gt;5): 25</title></rect><text x="454.0" y="178.5" text-anchor="middle" class="cmp-val">25</text><rect x="469.0" y="183.3" width="18.0" height="1.0" rx="3" fill="#1f9d63" opacity="0.92"><title>5章以后(&gt;5): 11</title></rect><text x="478.0" y="179.3" text-anchor="middle" class="cmp-val">11</text>
-      <text x="86.0" y="208" text-anchor="middle" class="cmp-axis">≥1章</text><text x="162.0" y="208" text-anchor="middle" class="cmp-axis">≥2章</text><text x="238.0" y="208" text-anchor="middle" class="cmp-axis">≥3章</text><text x="314.0" y="208" text-anchor="middle" class="cmp-axis">≥4章</text><text x="390.0" y="208" text-anchor="middle" class="cmp-axis">≥5章</text><text x="466.0" y="208" text-anchor="middle" class="cmp-axis">5章以后(&gt;5)</text>
-    </svg>
-    <div class="cmp-legend">
-      <span><i style="background:#2f7ce0"></i>续写书籍</span>
-      <span><i style="background:#1f9d63"></i>AI书籍</span>
-    </div>
-
-          </div>
-          <div class="card">
-            <h2>恰好 N 章对比（创建）</h2>
-            <p class="sub">按创建章节数量精确分档</p>
-            <table>
-              <thead><tr><th>章节档</th><th>续写书籍</th><th>AI书籍</th></tr></thead>
-              <tbody><tr><td>1章</td><td>1,555</td><td>2,227</td></tr><tr><td>2章</td><td>387</td><td>105</td></tr><tr><td>3章</td><td>289</td><td>20</td></tr><tr><td>4章</td><td>72</td><td>8</td></tr><tr><td>5章</td><td>21</td><td>2</td></tr><tr><td>5章以后(&gt;5)</td><td>25</td><td>11</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card section">
-          <h2>书级对比明细</h2>
-          <p class="sub">留存率 = 当前 / ≥1章；转化率 = 当前 / 上一档。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead><tr><th>阶段</th><th>续写创建</th><th>AI创建</th><th>续写留存</th><th>AI留存</th><th>续写转化</th><th>AI转化</th><th>续写发布</th><th>AI发布</th><th>续写发布留存</th><th>AI发布留存</th></tr></thead>
-              <tbody><tr><td>≥1章</td><td>2,349</td><td>2,373</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>436</td><td>192</td><td>100.0%</td><td>100.0%</td></tr><tr><td>≥2章</td><td>794</td><td>146</td><td>33.8%</td><td>6.2%</td><td>33.8%</td><td>6.2%</td><td>198</td><td>31</td><td>45.4%</td><td>16.1%</td></tr><tr><td>≥3章</td><td>407</td><td>41</td><td>17.3%</td><td>1.7%</td><td>51.3%</td><td>28.1%</td><td>106</td><td>16</td><td>24.3%</td><td>8.3%</td></tr><tr><td>≥4章</td><td>118</td><td>21</td><td>5.0%</td><td>0.9%</td><td>29.0%</td><td>51.2%</td><td>37</td><td>13</td><td>8.5%</td><td>6.8%</td></tr><tr><td>≥5章</td><td>46</td><td>13</td><td>2.0%</td><td>0.5%</td><td>39.0%</td><td>61.9%</td><td>17</td><td>11</td><td>3.9%</td><td>5.7%</td></tr><tr><td>5章以后(&gt;5)</td><td>25</td><td>11</td><td>1.1%</td><td>0.5%</td><td>54.3%</td><td>84.6%</td><td>11</td><td>8</td><td>2.5%</td><td>4.2%</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="books-table-compare">
-        <div class="summary-head">
-          <h3>内容总结 · 续写书籍 vs AI书籍</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · 续写书籍 vs AI书籍"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
-      </div>
-
-
-        
-      <section class="dataset-block" id="continue_books_summary">
-        <div class="dataset-head">
-          <h2 class="dataset-title">续写书籍总表</h2>
-          <div class="meta">按书籍聚合：总书数、达创建/发布章节档位书数；续写≥90次占比分母为≥3章书籍数。发布漏斗按「已发布章节数」。</div>
-        </div>
-
-        <div class="kpis">
-          
-          <div class="kpi create">
-            <div class="val">2,444</div>
-            <div class="lab">续写书籍总数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">105 · 25.8%</div>
-            <div class="lab">≥3章且续写≥90次 / 占≥3章</div>
-          </div>
-          <div class="kpi">
-            <div class="val">185 · 23.3%</div>
-            <div class="lab">≥2章且续写≥60次 / 占≥2章</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">436</div>
-            <div class="lab">有发布章节的书籍</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">2.5%</div>
-            <div class="lab">发布 ≥1章 → 5章以后 留存</div>
-          </div>
-        </div>
-
-        
-        <div class="card section gen-threshold-card">
-          <h2>续写次数门槛占比</h2>
-          <p class="sub">分子限定在对应章节档内：≥90次看≥3章池，≥60次看≥2章池。</p>
-          <div class="kpis" style="margin:0;grid-template-columns:repeat(2,1fr)">
-            <div class="kpi">
-              <div class="val">25.8%</div>
-              <div class="lab">续写≥90次 占 ≥3章书籍</div>
-              <div class="tiny" style="margin-top:8px">
-                105 / 407 本
-              </div>
-            </div>
-            <div class="kpi">
-              <div class="val">23.3%</div>
-              <div class="lab">续写≥60次 占 ≥2章书籍</div>
-              <div class="tiny" style="margin-top:8px">
-                185 / 794 本
-              </div>
-            </div>
-          </div>
-        </div>
-
-        
-        <div class="grid">
-          <div class="card">
-            <h2>创建章节 · 书籍漏斗</h2>
-            <p class="sub">口径：创建章节数 ≥1/2/3/4/5，以及 &gt;5。2,349 → 25</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">≥1章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>2,349</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥2章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:34%"></div></div>
-              <div class="bar-meta">
-                <strong>794</strong>
-                <span>留存率 33.8%</span>
-                <span>转化率 33.8%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥3章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:17%"></div></div>
-              <div class="bar-meta">
-                <strong>407</strong>
-                <span>留存率 17.3%</span>
-                <span>转化率 51.3%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥4章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:5%"></div></div>
-              <div class="bar-meta">
-                <strong>118</strong>
-                <span>留存率 5.0%</span>
-                <span>转化率 29.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥5章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>46</strong>
-                <span>留存率 2.0%</span>
-                <span>转化率 39.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5章以后(&gt;5)</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>25</strong>
-                <span>留存率 1.1%</span>
-                <span>转化率 54.3%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <h2>发布章节 · 书籍漏斗</h2>
-            <p class="sub">口径：已发布章节数 ≥1/2/3/4/5，以及 &gt;5。436 → 11</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">≥1章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>436</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥2章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:45%"></div></div>
-              <div class="bar-meta">
-                <strong>198</strong>
-                <span>留存率 45.4%</span>
-                <span>转化率 45.4%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥3章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:24%"></div></div>
-              <div class="bar-meta">
-                <strong>106</strong>
-                <span>留存率 24.3%</span>
-                <span>转化率 53.5%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥4章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:8%"></div></div>
-              <div class="bar-meta">
-                <strong>37</strong>
-                <span>留存率 8.5%</span>
-                <span>转化率 34.9%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥5章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>17</strong>
-                <span>留存率 3.9%</span>
-                <span>转化率 45.9%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5章以后(&gt;5)</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>11</strong>
-                <span>留存率 2.5%</span>
-                <span>转化率 64.7%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="grid">
-          <div class="card">
-            <h2>恰好 N 章（创建）</h2>
-            <p class="sub">按创建章节数量精确分档。</p>
-            <table>
-              <thead><tr><th>章节档</th><th>书籍数</th></tr></thead>
-              <tbody><tr><td>1章</td><td>1,555</td></tr><tr><td>2章</td><td>387</td></tr><tr><td>3章</td><td>289</td></tr><tr><td>4章</td><td>72</td></tr><tr><td>5章</td><td>21</td></tr><tr><td>5章以后(&gt;5)</td><td>25</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card">
-            <h2>恰好 N 章（发布）</h2>
-            <p class="sub">按已发布章节数量精确分档。</p>
-            <table>
-              <thead><tr><th>章节档</th><th>书籍数</th></tr></thead>
-              <tbody><tr><td>1章</td><td>238</td></tr><tr><td>2章</td><td>92</td></tr><tr><td>3章</td><td>69</td></tr><tr><td>4章</td><td>20</td></tr><tr><td>5章</td><td>6</td></tr><tr><td>5章以后(&gt;5)</td><td>11</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card section">
-          <h2>书籍留存 / 转化明细</h2>
-          <p class="sub">留存率 = 当前档书籍数 / ≥1章书籍数；转化率 = 当前档 / 上一档。</p>
-          <table>
-            <thead><tr><th>阶段</th><th>创建书籍数</th><th>创建留存</th><th>创建转化</th><th>发布书籍数</th><th>发布留存</th><th>发布转化</th></tr></thead>
-            <tbody><tr><td>≥1章</td><td>2,349</td><td>100.0%</td><td>100.0%</td><td>436</td><td>100.0%</td><td>100.0%</td></tr><tr><td>≥2章</td><td>794</td><td>33.8%</td><td>33.8%</td><td>198</td><td>45.4%</td><td>45.4%</td></tr><tr><td>≥3章</td><td>407</td><td>17.3%</td><td>51.3%</td><td>106</td><td>24.3%</td><td>53.5%</td></tr><tr><td>≥4章</td><td>118</td><td>5.0%</td><td>29.0%</td><td>37</td><td>8.5%</td><td>34.9%</td></tr><tr><td>≥5章</td><td>46</td><td>2.0%</td><td>39.0%</td><td>17</td><td>3.9%</td><td>45.9%</td></tr><tr><td>5章以后(&gt;5)</td><td>25</td><td>1.1%</td><td>54.3%</td><td>11</td><td>2.5%</td><td>64.7%</td></tr></tbody>
+      <div class="card" style="margin-top:14px">
+        <h2>逐日明细</h2>
+        <div class="scroll">
+          <table class="data" id="day-table">
+            <thead>
+              <tr>
+                <th>日</th><th>发章</th><th>当日加字</th><th>累计字数</th><th>字数阶段</th>
+                <th>昨UV</th><th>基础上限</th><th>日上限</th>
+                <th>近7天更</th><th>系数</th><th>机器人藏</th>
+                <th>更新补量</th><th>互动补量</th><th>停补</th><th>日合计</th><th>旧规则</th><th>影响</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
           </table>
         </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="continue_books_summary">
-        <div class="summary-head">
-          <h3>内容总结 · 续写书籍总表</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · 续写书籍总表"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
       </div>
+    </section>
 
-
-
-      <section class="dataset-block" id="ai_books_summary">
-        <div class="dataset-head">
-          <h2 class="dataset-title">AI书籍总表</h2>
-          <div class="meta">按书籍聚合：总书数、达创建/发布章节档位书数（bookType=6）；当前 SQL 无续写次数字段；发布漏斗按「已发布章节数」。</div>
+    <section id="panel-rules" class="panel">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <h2>1. 单次更新字数补量（作品字数档 × 单章字数）</h2>
+          <p class="hint" style="margin-top:0;margin-bottom:8px">分散 6h · 单本书 · 下表为单次脉冲值与次数</p>
+          <table class="data">
+            <thead><tr><th>作品字数</th><th>单章&lt;500</th><th>500~1k</th><th>1k~3k</th><th>3k~5k</th></tr></thead>
+            <tbody>
+              <tr><td>&lt;1万</td><td>50~100×3</td><td>100~150×3</td><td>150~300×5</td><td>300~500×5</td></tr>
+              <tr><td>1~3万</td><td>50~100×5</td><td>200~300×5</td><td>250~400×7</td><td>400~500×7</td></tr>
+              <tr><td>3~5万</td><td>100~200×5</td><td>300~400×5</td><td>500~600×7</td><td>600~800×7</td></tr>
+            </tbody>
+          </table>
+          <p class="hint">≥5 万作品按 3~5 万字档取值。更新补量 = 上表脉冲合计 × 连续更新系数</p>
         </div>
-
-        <div class="kpis">
-          
-          <div class="kpi create">
-            <div class="val">2,513</div>
-            <div class="lab">AI书籍总数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">41</div>
-            <div class="lab">创建≥3章书籍数</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">192</div>
-            <div class="lab">有发布章节的书籍</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">4.2%</div>
-            <div class="lab">发布 ≥1章 → 5章以后 留存</div>
-          </div>
+        <div class="card">
+          <h2>2. 连续更新系数（近7天）</h2>
+          <table class="data">
+            <thead><tr><th>近7天更新天数</th><th>系数</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>×1</td></tr>
+              <tr><td>2～3</td><td>×1.2</td></tr>
+              <tr><td>4～6</td><td>×1.5</td></tr>
+              <tr><td>7 天持续</td><td>×2</td></tr>
+            </tbody>
+          </table>
+          <h2 style="margin-top:16px">3. 互动补量（机器人可触发）</h2>
+          <table class="data">
+            <thead><tr><th>行为</th><th>单次</th><th>分散</th><th>日上限次数</th></tr></thead>
+            <tbody>
+              <tr><td>打赏</td><td>500~700</td><td>24h</td><td>3</td></tr>
+              <tr><td>评论</td><td>200~300</td><td>24h</td><td>5</td></tr>
+              <tr><td>段评</td><td>150~200</td><td>24h</td><td>5</td></tr>
+              <tr><td>收藏</td><td>200~300</td><td>24h</td><td>10</td></tr>
+              <tr><td>鲜花</td><td>50~100</td><td>24h</td><td>10</td></tr>
+              <tr><td>打卡</td><td>50~100</td><td>24h</td><td>10</td></tr>
+            </tbody>
+          </table>
+          <p class="hint">互动合计理论最大约 9600，但仍受字数阶段日上限裁切。</p>
         </div>
-
-        
-
-        
-        <div class="grid">
-          <div class="card">
-            <h2>创建章节 · 书籍漏斗</h2>
-            <p class="sub">口径：创建章节数 ≥1/2/3/4/5，以及 &gt;5。2,373 → 11</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">≥1章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>2,373</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥2章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:6%"></div></div>
-              <div class="bar-meta">
-                <strong>146</strong>
-                <span>留存率 6.2%</span>
-                <span>转化率 6.2%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥3章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>41</strong>
-                <span>留存率 1.7%</span>
-                <span>转化率 28.1%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥4章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>21</strong>
-                <span>留存率 0.9%</span>
-                <span>转化率 51.2%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥5章</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>13</strong>
-                <span>留存率 0.5%</span>
-                <span>转化率 61.9%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5章以后(&gt;5)</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>11</strong>
-                <span>留存率 0.5%</span>
-                <span>转化率 84.6%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <h2>发布章节 · 书籍漏斗</h2>
-            <p class="sub">口径：已发布章节数 ≥1/2/3/4/5，以及 &gt;5。192 → 8</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">≥1章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>192</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥2章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:16%"></div></div>
-              <div class="bar-meta">
-                <strong>31</strong>
-                <span>留存率 16.1%</span>
-                <span>转化率 16.1%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥3章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:8%"></div></div>
-              <div class="bar-meta">
-                <strong>16</strong>
-                <span>留存率 8.3%</span>
-                <span>转化率 51.6%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥4章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:7%"></div></div>
-              <div class="bar-meta">
-                <strong>13</strong>
-                <span>留存率 6.8%</span>
-                <span>转化率 81.2%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">≥5章</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:6%"></div></div>
-              <div class="bar-meta">
-                <strong>11</strong>
-                <span>留存率 5.7%</span>
-                <span>转化率 84.6%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5章以后(&gt;5)</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>8</strong>
-                <span>留存率 4.2%</span>
-                <span>转化率 72.7%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="grid">
-          <div class="card">
-            <h2>恰好 N 章（创建）</h2>
-            <p class="sub">按创建章节数量精确分档。</p>
-            <table>
-              <thead><tr><th>章节档</th><th>书籍数</th></tr></thead>
-              <tbody><tr><td>1章</td><td>2,227</td></tr><tr><td>2章</td><td>105</td></tr><tr><td>3章</td><td>20</td></tr><tr><td>4章</td><td>8</td></tr><tr><td>5章</td><td>2</td></tr><tr><td>5章以后(&gt;5)</td><td>11</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card">
-            <h2>恰好 N 章（发布）</h2>
-            <p class="sub">按已发布章节数量精确分档。</p>
-            <table>
-              <thead><tr><th>章节档</th><th>书籍数</th></tr></thead>
-              <tbody><tr><td>1章</td><td>161</td></tr><tr><td>2章</td><td>15</td></tr><tr><td>3章</td><td>3</td></tr><tr><td>4章</td><td>2</td></tr><tr><td>5章</td><td>3</td></tr><tr><td>5章以后(&gt;5)</td><td>8</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card section">
-          <h2>书籍留存 / 转化明细</h2>
-          <p class="sub">留存率 = 当前档书籍数 / ≥1章书籍数；转化率 = 当前档 / 上一档。</p>
-          <table>
-            <thead><tr><th>阶段</th><th>创建书籍数</th><th>创建留存</th><th>创建转化</th><th>发布书籍数</th><th>发布留存</th><th>发布转化</th></tr></thead>
-            <tbody><tr><td>≥1章</td><td>2,373</td><td>100.0%</td><td>100.0%</td><td>192</td><td>100.0%</td><td>100.0%</td></tr><tr><td>≥2章</td><td>146</td><td>6.2%</td><td>6.2%</td><td>31</td><td>16.1%</td><td>16.1%</td></tr><tr><td>≥3章</td><td>41</td><td>1.7%</td><td>28.1%</td><td>16</td><td>8.3%</td><td>51.6%</td></tr><tr><td>≥4章</td><td>21</td><td>0.9%</td><td>51.2%</td><td>13</td><td>6.8%</td><td>81.2%</td></tr><tr><td>≥5章</td><td>13</td><td>0.5%</td><td>61.9%</td><td>11</td><td>5.7%</td><td>84.6%</td></tr><tr><td>5章以后(&gt;5)</td><td>11</td><td>0.5%</td><td>84.6%</td><td>8</td><td>4.2%</td><td>72.7%</td></tr></tbody>
+        <div class="card" style="grid-column:1/-1">
+          <h2>字数阶段每日上限（可按昨日真实 UV 抬档）</h2>
+          <table class="data">
+            <thead><tr><th>当前字数</th><th>阶段</th><th>基础上限</th><th>UV 抬档</th></tr></thead>
+            <tbody>
+              <tr><td>0~1万</td><td>新书开篇</td><td>1500</td><td>昨UV≥50 → 3000</td></tr>
+              <tr><td>1~3万</td><td>前期成长</td><td>3000</td><td>昨UV≥100 → 5000</td></tr>
+              <tr><td>3~5万</td><td>稳定创作</td><td>5000</td><td>昨UV≥200 → 8000</td></tr>
+              <tr><td>5~10万</td><td>成长</td><td>10000</td><td>昨UV≥500 → 10000</td></tr>
+              <tr><td>&gt;10万</td><td>—</td><td>10000</td><td>—</td></tr>
+            </tbody>
           </table>
         </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="ai_books_summary">
-        <div class="summary-head">
-          <h3>内容总结 · AI书籍总表</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · AI书籍总表"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
       </div>
+    </section>
 
-
-
-      <section class="dataset-block" id="chapter_clicks">
-        <div class="dataset-head">
-          <h2 class="dataset-title">续写章节点击次数</h2>
-          <div class="meta">用户×书×章 续写点击汇总；「用满」阈值 ≥30 次。未改写：该 SQL 无 createTime/create_time 时间窗（全量口径） · 行数 3,446</div>
-        </div>
-
-        <div class="kpis">
-          <div class="kpi create">
-            <div class="val">3,446</div>
-            <div class="lab">用户×章节记录数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">1,575</div>
-            <div class="lab">用户数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">2,444</div>
-            <div class="lab">书籍数</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">629 · 18.3%</div>
-            <div class="lab">用满≥30次 / 占比</div>
-          </div>
-        </div>
-        <div class="kpis" style="margin-top:12px">
-          <div class="kpi">
-            <div class="val">11.32</div>
-            <div class="lab">平均点击续写次数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">7.00</div>
-            <div class="lab">中位点击续写次数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">30</div>
-            <div class="lab">最高点击续写次数</div>
-          </div>
-          <div class="kpi">
-            <div class="val">3,446</div>
-            <div class="lab">章节数（书×章）</div>
-          </div>
-        </div>
-
-        <div class="grid">
-          <div class="card">
-            <h2>点击次数分档占比</h2>
-            <p class="sub">分母为全部用户×章节记录（3,446）。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1次</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:86%"></div></div>
-              <div class="bar-meta">
-                <strong>657</strong>
-                <span>占比 19.1%</span>
-              </div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-label">2-5次</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>768</strong>
-                <span>占比 22.3%</span>
-              </div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-label">6-10次</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:90%"></div></div>
-              <div class="bar-meta">
-                <strong>694</strong>
-                <span>占比 20.1%</span>
-              </div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-label">11-29次</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:91%"></div></div>
-              <div class="bar-meta">
-                <strong>698</strong>
-                <span>占比 20.3%</span>
-              </div>
-            </div>
-            <div class="bar-row">
-              <div class="bar-label">≥30次</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:82%"></div></div>
-              <div class="bar-meta">
-                <strong>629</strong>
-                <span>占比 18.3%</span>
-              </div>
-            </div>
-            <table style="margin-top:14px">
-              <thead><tr><th>分档</th><th>记录数</th><th>占比</th></tr></thead>
-              <tbody><tr><td>1次</td><td>657</td><td>19.1%</td></tr><tr><td>2-5次</td><td>768</td><td>22.3%</td></tr><tr><td>6-10次</td><td>694</td><td>20.1%</td></tr><tr><td>11-29次</td><td>698</td><td>20.3%</td></tr><tr><td>≥30次</td><td>629</td><td>18.3%</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card">
-            <h2>书籍 Top20（按点击合计）</h2>
-            <p class="sub">同一书下所有用户×章节点击之和。</p>
-            <table>
-              <thead><tr><th>#</th><th>书名</th><th>记录数</th><th>点击合计</th></tr></thead>
-              <tbody><tr><td>1</td><td>装十八线我撩爆顶流</td><td>4</td><td>91</td></tr><tr><td>2</td><td>我嫁敌酋却暗助八路-d714</td><td>3</td><td>90</td></tr><tr><td>3</td><td>我装路人被他撞破</td><td>3</td><td>90</td></tr><tr><td>4</td><td>我装糊咖，前男友慌了</td><td>3</td><td>90</td></tr><tr><td>5</td><td>我和马嘉祺官宣结婚了</td><td>3</td><td>90</td></tr><tr><td>6</td><td>留英千金她自带零食库</td><td>3</td><td>90</td></tr><tr><td>7</td><td>伪装十八线闪婚顶流老板</td><td>3</td><td>90</td></tr><tr><td>8</td><td>我装糊咖前对象是大佬</td><td>3</td><td>90</td></tr><tr><td>9</td><td>十八线糊豆竟是我隐婚对象</td><td>3</td><td>90</td></tr><tr><td>10</td><td>病弱学霸他万人迷</td><td>3</td><td>90</td></tr><tr><td>11</td><td>顶流对家居然是我对象</td><td>3</td><td>90</td></tr><tr><td>12</td><td>替身是他丢弃的另一半</td><td>3</td><td>90</td></tr><tr><td>13</td><td>我醒后变小了大佬们都懵了</td><td>3</td><td>90</td></tr><tr><td>14</td><td>书名正在修改1785404952306550959</td><td>3</td><td>90</td></tr><tr><td>15</td><td>成团后他反撩前队友</td><td>3</td><td>90</td></tr><tr><td>16</td><td>归国嫁营长，遇歹人毁家-d237</td><td>3</td><td>90</td></tr><tr><td>17</td><td>我留学归国嫁铁血营长-d675</td><td>3</td><td>90</td></tr><tr><td>18</td><td>退隐影帝恋上糊咖-d219</td><td>3</td><td>90</td></tr><tr><td>19</td><td>领结婚证后我马甲掉了</td><td>3</td><td>90</td></tr><tr><td>20</td><td>我当十八线前夫求领证</td><td>3</td><td>90</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="chapter_clicks">
-        <div class="summary-head">
-          <h3>内容总结 · 续写章节点击次数</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · 续写章节点击次数"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
+    <section id="panel-vs" class="panel">
+      <div class="card">
+        <h2>新旧差异（推算关注点）</h2>
+        <table class="data">
+          <thead><tr><th>项</th><th>旧规则</th><th>新规则</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>发章人气</td><td>首章/非首章固定档（可到单章数千，48h 分散）</td><td>作品字数档×单章字数档二维表；≥3万书+2k章可达 3500~5600×系数</td>
+            </tr>
+            <tr>
+              <td>收藏人气</td><td>每次藏 4×(100~500)，6h</td><td>每次藏 1×(200~300)，24h，日最多 10 次</td>
+            </tr>
+            <tr>
+              <td>机器人发章收藏</td><td>不变</td><td>不变（仍安排机器人藏书）</td>
+            </tr>
+            <tr>
+              <td>日上限</td><td>固定 8000（触顶后当日停补）</td><td>字数阶段 1500~10000，可随真实 UV 抬档</td>
+            </tr>
+            <tr>
+              <td>日更≥1000字</td><td>48h 拖尾叠加 + 收藏补量，稳态贴近 8000 平顶、波动极小</td><td>字数阶段上限裁切，长尾明显低于旧规则</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="hint">用同一种子对照：旧规则按「发章→章节补量 + 机器人藏→收藏补量」、日上限固定 8000、触顶停补；新规则只换补量数值与字数阶段上限。新规则触顶不会打断旧规则结算。</p>
       </div>
-
-
-
-      <section class="dataset-block" id="continue_books">
-        <div class="dataset-head">
-          <h2 class="dataset-title">续写模式</h2>
-          <div class="meta">创建=<code>章节创建总章数</code> / 发布=<code>已发布章节数</code> · 未改写：该 SQL 无 createTime/create_time 时间窗（全量口径） · 行数 5</div>
-        </div>
-
-        <div class="kpis">
-          <div class="kpi create">
-            <div class="val">3.1%</div>
-            <div class="lab">创建 · 首→末留存率</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">5.1%</div>
-            <div class="lab">发布 · 首→末留存率</div>
-          </div>
-          <div class="kpi">
-            <div class="val">2,444 → 76</div>
-            <div class="lab">章节创建总章数（首→末）</div>
-          </div>
-          <div class="kpi">
-            <div class="val">414 → 21</div>
-            <div class="lab">已发布章节数（首→末）</div>
-          </div>
-          
-        </div>
-
-        
-        <div class="grid">
-          <div class="card">
-            <h2>创建 · 阶段转化</h2>
-            <p class="sub">口径列：章节创建总章数。留存率相对首阶段，转化率相对上一阶段。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>2,444</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">2</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:34%"></div></div>
-              <div class="bar-meta">
-                <strong>843</strong>
-                <span>留存率 34.5%</span>
-                <span>转化率 34.5%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">3</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:19%"></div></div>
-              <div class="bar-meta">
-                <strong>461</strong>
-                <span>留存率 18.9%</span>
-                <span>转化率 54.7%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">4</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:7%"></div></div>
-              <div class="bar-meta">
-                <strong>160</strong>
-                <span>留存率 6.5%</span>
-                <span>转化率 34.7%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>76</strong>
-                <span>留存率 3.1%</span>
-                <span>转化率 47.5%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <h2>发布 · 阶段转化</h2>
-            <p class="sub">口径列：已发布章节数。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>414</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">2</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:43%"></div></div>
-              <div class="bar-meta">
-                <strong>177</strong>
-                <span>留存率 42.8%</span>
-                <span>转化率 42.8%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">3</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:29%"></div></div>
-              <div class="bar-meta">
-                <strong>120</strong>
-                <span>留存率 29.0%</span>
-                <span>转化率 67.8%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">4</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:8%"></div></div>
-              <div class="bar-meta">
-                <strong>34</strong>
-                <span>留存率 8.2%</span>
-                <span>转化率 28.3%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:5%"></div></div>
-              <div class="bar-meta">
-                <strong>21</strong>
-                <span>留存率 5.1%</span>
-                <span>转化率 61.8%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="card section">
-          <h2>阶段明细表</h2>
-          <p class="sub">留存率 = 当前 / 首阶段；转化率 = 当前 / 上一阶段。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead>
-                <tr><th>阶段</th><th>章节创建总章数</th><th>创建留存率</th><th>创建转化率</th><th>已发布章节数</th><th>发布留存率</th><th>发布转化率</th><th>有续写记录的章节数</th><th>AI续写总次数</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>1</td><td>2,444</td><td>100.0%</td><td>100.0%</td><td>414</td><td>100.0%</td><td>100.0%</td><td>2,247</td><td>21,859</td></tr><tr><td>2</td><td>843</td><td>34.5%</td><td>34.5%</td><td>177</td><td>42.8%</td><td>42.8%</td><td>774</td><td>9,986</td></tr><tr><td>3</td><td>461</td><td>18.9%</td><td>54.7%</td><td>120</td><td>29.0%</td><td>67.8%</td><td>418</td><td>7,074</td></tr><tr><td>4</td><td>160</td><td>6.5%</td><td>34.7%</td><td>34</td><td>8.2%</td><td>28.3%</td><td>5</td><td>48</td></tr><tr><td>5</td><td>76</td><td>3.1%</td><td>47.5%</td><td>21</td><td>5.1%</td><td>61.8%</td><td>1</td><td>30</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card section">
-          <h2>原始查询结果</h2>
-          <p class="sub">来自本次执行快照（最多 200 行）。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead><tr><th>章节序位</th><th>章节创建总章数</th><th>已发布章节数</th><th>有续写记录的章节数</th><th>AI续写总次数</th></tr></thead>
-              <tbody><tr><td>1</td><td>2444</td><td>414</td><td>2247</td><td>21859</td></tr><tr><td>2</td><td>843</td><td>177</td><td>774</td><td>9986</td></tr><tr><td>3</td><td>461</td><td>120</td><td>418</td><td>7074</td></tr><tr><td>4</td><td>160</td><td>34</td><td>5</td><td>48</td></tr><tr><td>5</td><td>76</td><td>21</td><td>1</td><td>30</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="continue_books">
-        <div class="summary-head">
-          <h3>内容总结 · 续写模式</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · 续写模式"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
-      </div>
-
-
-
-      <section class="dataset-block" id="ai_book_users">
-        <div class="dataset-head">
-          <h2 class="dataset-title">ai模式</h2>
-          <div class="meta">用户: 创建=<code>章节创建总次数_用户数</code> / 发布=<code>章节创建总次数_已发布_用户数</code> · 章节总次数: 创建=<code>章节创建总次数</code> / 发布=<code>章节创建总次数_已发布</code> · 窗口 2026-07-01~2026-07-30 · 行数 5</div>
-        </div>
-
-        <div class="kpis kpis-6">
-          <div class="kpi create">
-            <div class="val">0.7%</div>
-            <div class="lab">用户 · 创建 · 首→末留存率</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">5.9%</div>
-            <div class="lab">用户 · 发布 · 首→末留存率</div>
-          </div>
-          <div class="kpi">
-            <div class="val">2,307 → 16</div>
-            <div class="lab">章节创建总次数_用户数（首→末）</div>
-          </div>
-          <div class="kpi">
-            <div class="val">188 → 11</div>
-            <div class="lab">章节创建总次数_已发布_用户数（首→末）</div>
-          </div>
-          
-          <div class="kpi create">
-            <div class="val">0.5%</div>
-            <div class="lab">章节总次数 · 创建留存率</div>
-          </div>
-          <div class="kpi publish">
-            <div class="val">5.4%</div>
-            <div class="lab">章节总次数 · 发布留存率</div>
-          </div>
-
-        </div>
-
-        
-        <div class="grid">
-          <div class="card">
-            <h2>用户 · 创建 · 阶段转化</h2>
-            <p class="sub">口径列：章节创建总次数_用户数。留存率相对首阶段，转化率相对上一阶段。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>2,307</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">2</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:8%"></div></div>
-              <div class="bar-meta">
-                <strong>177</strong>
-                <span>留存率 7.7%</span>
-                <span>转化率 7.7%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">3</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>48</strong>
-                <span>留存率 2.1%</span>
-                <span>转化率 27.1%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">4</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>27</strong>
-                <span>留存率 1.2%</span>
-                <span>转化率 56.2%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>16</strong>
-                <span>留存率 0.7%</span>
-                <span>转化率 59.3%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <h2>用户 · 发布 · 阶段转化</h2>
-            <p class="sub">口径列：章节创建总次数_已发布_用户数。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>188</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">2</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:18%"></div></div>
-              <div class="bar-meta">
-                <strong>33</strong>
-                <span>留存率 17.6%</span>
-                <span>转化率 17.6%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">3</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:9%"></div></div>
-              <div class="bar-meta">
-                <strong>17</strong>
-                <span>留存率 9.0%</span>
-                <span>转化率 51.5%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">4</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:6%"></div></div>
-              <div class="bar-meta">
-                <strong>12</strong>
-                <span>留存率 6.4%</span>
-                <span>转化率 70.6%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:6%"></div></div>
-              <div class="bar-meta">
-                <strong>11</strong>
-                <span>留存率 5.9%</span>
-                <span>转化率 91.7%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="grid">
-          <div class="card">
-            <h2>章节总次数 · 创建 · 阶段转化</h2>
-            <p class="sub">口径列：章节创建总次数。留存率相对首阶段，转化率相对上一阶段。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>2,920</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">2</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:6%"></div></div>
-              <div class="bar-meta">
-                <strong>184</strong>
-                <span>留存率 6.3%</span>
-                <span>转化率 6.3%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">3</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>49</strong>
-                <span>留存率 1.7%</span>
-                <span>转化率 26.6%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">4</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>27</strong>
-                <span>留存率 0.9%</span>
-                <span>转化率 55.1%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5</div>
-              <div class="bar-track"><div class="bar-fill create" style="width:4%"></div></div>
-              <div class="bar-meta">
-                <strong>16</strong>
-                <span>留存率 0.5%</span>
-                <span>转化率 59.3%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <h2>章节总次数 · 发布 · 阶段转化</h2>
-            <p class="sub">口径列：章节创建总次数_已发布。</p>
-            
-            <div class="bar-row">
-              <div class="bar-label">1</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:100%"></div></div>
-              <div class="bar-meta">
-                <strong>204</strong>
-                <span>留存率 100.0%</span>
-                <span>转化率 100.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">2</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:17%"></div></div>
-              <div class="bar-meta">
-                <strong>34</strong>
-                <span>留存率 16.7%</span>
-                <span>转化率 16.7%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">3</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:8%"></div></div>
-              <div class="bar-meta">
-                <strong>17</strong>
-                <span>留存率 8.3%</span>
-                <span>转化率 50.0%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">4</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:6%"></div></div>
-              <div class="bar-meta">
-                <strong>12</strong>
-                <span>留存率 5.9%</span>
-                <span>转化率 70.6%</span>
-              </div>
-            </div>
-
-            <div class="bar-row">
-              <div class="bar-label">5</div>
-              <div class="bar-track"><div class="bar-fill publish" style="width:5%"></div></div>
-              <div class="bar-meta">
-                <strong>11</strong>
-                <span>留存率 5.4%</span>
-                <span>转化率 91.7%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="card section">
-          <h2>阶段明细表</h2>
-          <p class="sub">留存率 = 当前 / 首阶段；转化率 = 当前 / 上一阶段。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead>
-                <tr><th>阶段</th><th>用户·章节创建总次数_用户数</th><th>用户·创建留存率</th><th>用户·创建转化率</th><th>用户·章节创建总次数_已发布_用户数</th><th>用户·发布留存率</th><th>用户·发布转化率</th><th>章节总次数·章节创建总次数</th><th>章节总次数·创建留存率</th><th>章节总次数·创建转化率</th><th>章节总次数·章节创建总次数_已发布</th><th>章节总次数·发布留存率</th><th>章节总次数·发布转化率</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>1</td><td>2,307</td><td>100.0%</td><td>100.0%</td><td>188</td><td>100.0%</td><td>100.0%</td><td>2,920</td><td>100.0%</td><td>100.0%</td><td>204</td><td>100.0%</td><td>100.0%</td></tr><tr><td>2</td><td>177</td><td>7.7%</td><td>7.7%</td><td>33</td><td>17.6%</td><td>17.6%</td><td>184</td><td>6.3%</td><td>6.3%</td><td>34</td><td>16.7%</td><td>16.7%</td></tr><tr><td>3</td><td>48</td><td>2.1%</td><td>27.1%</td><td>17</td><td>9.0%</td><td>51.5%</td><td>49</td><td>1.7%</td><td>26.6%</td><td>17</td><td>8.3%</td><td>50.0%</td></tr><tr><td>4</td><td>27</td><td>1.2%</td><td>56.2%</td><td>12</td><td>6.4%</td><td>70.6%</td><td>27</td><td>0.9%</td><td>55.1%</td><td>12</td><td>5.9%</td><td>70.6%</td></tr><tr><td>5</td><td>16</td><td>0.7%</td><td>59.3%</td><td>11</td><td>5.9%</td><td>91.7%</td><td>16</td><td>0.5%</td><td>59.3%</td><td>11</td><td>5.4%</td><td>91.7%</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card section">
-          <h2>原始查询结果</h2>
-          <p class="sub">来自本次执行快照（最多 200 行）。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead><tr><th>章节序位</th><th>章节创建总次数</th><th>章节创建总次数_用户数</th><th>章节创建总次数_已发布</th><th>章节创建总次数_已发布_用户数</th></tr></thead>
-              <tbody><tr><td>1</td><td>2920</td><td>2307</td><td>204</td><td>188</td></tr><tr><td>2</td><td>184</td><td>177</td><td>34</td><td>33</td></tr><tr><td>3</td><td>49</td><td>48</td><td>17</td><td>17</td></tr><tr><td>4</td><td>27</td><td>27</td><td>12</td><td>12</td></tr><tr><td>5</td><td>16</td><td>16</td><td>11</td><td>11</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="ai_book_users">
-        <div class="summary-head">
-          <h3>内容总结 · ai模式</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · ai模式"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
-      </div>
-
-
-      </div>
-
-      <div class="tab-panel" id="panel-income" role="tabpanel">
-        
-      <section class="dataset-block compare-block" id="income-compare">
-        <div class="dataset-head">
-          <h2 class="dataset-title">三种书籍 · 收入对比</h2>
-          <div class="meta">数据源：全站新书收入 / 续写书收入 / AI书收入。指标：平均 / 中位数 / 最高（按书去重后的分成收入）。</div>
-        </div>
-        <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-          
-          <div class="kpi toast-card" style="border-top:3px solid #ED7D31" data-toast="全站新书｜书籍数 20,000；平均 0.66；中位 0.03；最高 545.70">
-            <div class="lab" style="font-weight:650;color:var(--ink);margin-bottom:8px">全站新书</div>
-            <div class="val" style="font-size:22px">20,000</div>
-            <div class="lab">书籍数</div>
-            <div style="margin-top:12px;display:grid;gap:6px;font-size:13px">
-              <div>平均 <strong>0.66</strong></div>
-              <div>中位 <strong>0.03</strong></div>
-              <div>最高 <strong>545.70</strong></div>
-            </div>
-          </div>
-          <div class="kpi toast-card" style="border-top:3px solid #5B9BD5" data-toast="续写书｜书籍数 436；平均 0.17；中位 0.00；最高 3.93">
-            <div class="lab" style="font-weight:650;color:var(--ink);margin-bottom:8px">续写书</div>
-            <div class="val" style="font-size:22px">436</div>
-            <div class="lab">书籍数</div>
-            <div style="margin-top:12px;display:grid;gap:6px;font-size:13px">
-              <div>平均 <strong>0.17</strong></div>
-              <div>中位 <strong>0.00</strong></div>
-              <div>最高 <strong>3.93</strong></div>
-            </div>
-          </div>
-          <div class="kpi toast-card" style="border-top:3px solid #70AD47" data-toast="AI书｜书籍数 650；平均 0.14；中位 0.00；最高 3.93">
-            <div class="lab" style="font-weight:650;color:var(--ink);margin-bottom:8px">AI书</div>
-            <div class="val" style="font-size:22px">650</div>
-            <div class="lab">书籍数</div>
-            <div style="margin-top:12px;display:grid;gap:6px;font-size:13px">
-              <div>平均 <strong>0.14</strong></div>
-              <div>中位 <strong>0.00</strong></div>
-              <div>最高 <strong>3.93</strong></div>
-            </div>
-          </div>
-        </div>
-        <div class="card section">
-          <h2>总体收入对比</h2>
-          <p class="sub">平均 / 中位数 / 最高收入并排；鼠标悬停卡片可看 toast 明细。</p>
-          <div class="grid grid-3">
-            
-        <div class="card toast-card" data-toast="平均收入｜续写书：0.17（436 本）；全站新书：0.66（20,000 本）；AI书：0.14（650 本）">
-          <h2>平均收入</h2>
-          <p class="sub">三种书籍总体对比 · 悬停查看明细</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 360 240" role="img" aria-label="对比柱状图">
-      <line x1="44" x2="340" y1="196.0" y2="196.0" class="cmp-grid"/><text x="38" y="199.0" text-anchor="end" class="cmp-axis">0</text><line x1="44" x2="340" y1="151.0" y2="151.0" class="cmp-grid"/><text x="38" y="154.0" text-anchor="end" class="cmp-axis">0.2</text><line x1="44" x2="340" y1="106.0" y2="106.0" class="cmp-grid"/><text x="38" y="109.0" text-anchor="end" class="cmp-axis">0.4</text><line x1="44" x2="340" y1="61.0" y2="61.0" class="cmp-grid"/><text x="38" y="64.0" text-anchor="end" class="cmp-axis">0.6</text><line x1="44" x2="340" y1="16.0" y2="16.0" class="cmp-grid"/><text x="38" y="19.0" text-anchor="end" class="cmp-axis">0.8</text>
-      <line x1="44" x2="340" y1="196.0" y2="196.0" stroke="#c5cdd8" stroke-width="1"/><rect x="146.0" y="155.7" width="28.0" height="40.3" rx="2" fill="#5B9BD5"><title>续写书 ·  : 0.17</title></rect><text x="160.0" y="151.7" text-anchor="middle" class="cmp-val">0.17</text><rect x="178.0" y="39.5" width="28.0" height="156.5" rx="2" fill="#ED7D31"><title>全站新书 ·  : 0.66</title></rect><text x="192.0" y="35.5" text-anchor="middle" class="cmp-val">0.66</text><rect x="210.0" y="162.8" width="28.0" height="33.2" rx="2" fill="#70AD47"><title>AI书 ·  : 0.14</title></rect><text x="224.0" y="158.8" text-anchor="middle" class="cmp-val">0.14</text>
-      <text x="192.0" y="224" text-anchor="middle" class="cmp-axis"> </text>
-    </svg>
-    <div class="cmp-legend"><span><i style="background:#5B9BD5"></i>续写书</span><span><i style="background:#ED7D31"></i>全站新书</span><span><i style="background:#70AD47"></i>AI书</span></div>
-
-        </div>
-            
-        <div class="card toast-card" data-toast="中位数｜续写书：0.00（436 本）；全站新书：0.03（20,000 本）；AI书：0.00（650 本）">
-          <h2>中位数</h2>
-          <p class="sub">三种书籍总体对比 · 悬停查看明细</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 360 240" role="img" aria-label="对比柱状图">
-      <line x1="44" x2="340" y1="196.0" y2="196.0" class="cmp-grid"/><text x="38" y="199.0" text-anchor="end" class="cmp-axis">0</text><line x1="44" x2="340" y1="151.0" y2="151.0" class="cmp-grid"/><text x="38" y="154.0" text-anchor="end" class="cmp-axis">0.0</text><line x1="44" x2="340" y1="106.0" y2="106.0" class="cmp-grid"/><text x="38" y="109.0" text-anchor="end" class="cmp-axis">0.0</text><line x1="44" x2="340" y1="61.0" y2="61.0" class="cmp-grid"/><text x="38" y="64.0" text-anchor="end" class="cmp-axis">0.0</text><line x1="44" x2="340" y1="16.0" y2="16.0" class="cmp-grid"/><text x="38" y="19.0" text-anchor="end" class="cmp-axis">0.0</text>
-      <line x1="44" x2="340" y1="196.0" y2="196.0" stroke="#c5cdd8" stroke-width="1"/><rect x="146.0" y="196.0" width="28.0" height="1.5" rx="2" fill="#5B9BD5"><title>续写书 ·  : 0</title></rect><rect x="178.0" y="39.5" width="28.0" height="156.5" rx="2" fill="#ED7D31"><title>全站新书 ·  : 0.03</title></rect><text x="192.0" y="35.5" text-anchor="middle" class="cmp-val">0.03</text><rect x="210.0" y="196.0" width="28.0" height="1.5" rx="2" fill="#70AD47"><title>AI书 ·  : 0</title></rect>
-      <text x="192.0" y="224" text-anchor="middle" class="cmp-axis"> </text>
-    </svg>
-    <div class="cmp-legend"><span><i style="background:#5B9BD5"></i>续写书</span><span><i style="background:#ED7D31"></i>全站新书</span><span><i style="background:#70AD47"></i>AI书</span></div>
-
-        </div>
-            
-        <div class="card toast-card" data-toast="最高收入｜续写书：3.93（436 本）；全站新书：545.70（20,000 本）；AI书：3.93（650 本）">
-          <h2>最高收入</h2>
-          <p class="sub">三种书籍总体对比 · 悬停查看明细</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 360 240" role="img" aria-label="对比柱状图">
-      <line x1="44" x2="340" y1="196.0" y2="196.0" class="cmp-grid"/><text x="38" y="199.0" text-anchor="end" class="cmp-axis">0</text><line x1="44" x2="340" y1="151.0" y2="151.0" class="cmp-grid"/><text x="38" y="154.0" text-anchor="end" class="cmp-axis">157</text><line x1="44" x2="340" y1="106.0" y2="106.0" class="cmp-grid"/><text x="38" y="109.0" text-anchor="end" class="cmp-axis">314</text><line x1="44" x2="340" y1="61.0" y2="61.0" class="cmp-grid"/><text x="38" y="64.0" text-anchor="end" class="cmp-axis">471</text><line x1="44" x2="340" y1="16.0" y2="16.0" class="cmp-grid"/><text x="38" y="19.0" text-anchor="end" class="cmp-axis">628</text>
-      <line x1="44" x2="340" y1="196.0" y2="196.0" stroke="#c5cdd8" stroke-width="1"/><rect x="146.0" y="194.9" width="28.0" height="1.5" rx="2" fill="#5B9BD5"><title>续写书 ·  : 3.93</title></rect><rect x="178.0" y="39.5" width="28.0" height="156.5" rx="2" fill="#ED7D31"><title>全站新书 ·  : 545.7</title></rect><text x="192.0" y="35.5" text-anchor="middle" class="cmp-val">545.7</text><rect x="210.0" y="194.9" width="28.0" height="1.5" rx="2" fill="#70AD47"><title>AI书 ·  : 3.93</title></rect>
-      <text x="192.0" y="224" text-anchor="middle" class="cmp-axis"> </text>
-    </svg>
-    <div class="cmp-legend"><span><i style="background:#5B9BD5"></i>续写书</span><span><i style="background:#ED7D31"></i>全站新书</span><span><i style="background:#70AD47"></i>AI书</span></div>
-
-        </div>
-          </div>
-        </div>
-        <div class="card section toast-card" data-toast="同章节档平均收入：按 1~21章+ 对比续写书 / 全站新书 / AI书">
-          <h2>同章节档 · 平均收入</h2>
-          <p class="sub">横轴为章节档，柱为续写书 / 全站新书 / AI书平均收入。</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 900 320" role="img" aria-label="对比柱状图">
-      <line x1="44" x2="880" y1="276.0" y2="276.0" class="cmp-grid"/><text x="38" y="279.0" text-anchor="end" class="cmp-axis">0</text><line x1="44" x2="880" y1="211.0" y2="211.0" class="cmp-grid"/><text x="38" y="214.0" text-anchor="end" class="cmp-axis">1.8</text><line x1="44" x2="880" y1="146.0" y2="146.0" class="cmp-grid"/><text x="38" y="149.0" text-anchor="end" class="cmp-axis">3.7</text><line x1="44" x2="880" y1="81.0" y2="81.0" class="cmp-grid"/><text x="38" y="84.0" text-anchor="end" class="cmp-axis">5.5</text><line x1="44" x2="880" y1="16.0" y2="16.0" class="cmp-grid"/><text x="38" y="19.0" text-anchor="end" class="cmp-axis">7.3</text>
-      <line x1="44" x2="880" y1="276.0" y2="276.0" stroke="#c5cdd8" stroke-width="1"/><rect x="58.6" y="272.8" width="22.4" height="3.2" rx="2" fill="#5B9BD5"><title>续写书平均 · 1章: 0.09</title></rect><rect x="85.0" y="273.2" width="22.4" height="2.8" rx="2" fill="#ED7D31"><title>全站新书平均 · 1章: 0.08</title></rect><rect x="111.5" y="273.9" width="22.4" height="2.1" rx="2" fill="#70AD47"><title>AI书平均 · 1章: 0.06</title></rect><rect x="163.1" y="271.0" width="22.4" height="5.0" rx="2" fill="#5B9BD5"><title>续写书平均 · 2章: 0.14</title></rect><rect x="189.5" y="273.5" width="22.4" height="2.5" rx="2" fill="#ED7D31"><title>全站新书平均 · 2章: 0.07</title></rect><rect x="216.0" y="270.3" width="22.4" height="5.7" rx="2" fill="#70AD47"><title>AI书平均 · 2章: 0.16</title></rect><rect x="267.6" y="266.0" width="22.4" height="10.0" rx="2" fill="#5B9BD5"><title>续写书平均 · 3章: 0.28</title></rect><rect x="294.0" y="272.1" width="22.4" height="3.9" rx="2" fill="#ED7D31"><title>全站新书平均 · 3章: 0.11</title></rect><rect x="320.5" y="265.7" width="22.4" height="10.3" rx="2" fill="#70AD47"><title>AI书平均 · 3章: 0.29</title></rect><rect x="372.1" y="263.9" width="22.4" height="12.1" rx="2" fill="#5B9BD5"><title>续写书平均 · 4章: 0.34</title></rect><rect x="398.5" y="271.0" width="22.4" height="5.0" rx="2" fill="#ED7D31"><title>全站新书平均 · 4章: 0.14</title></rect><rect x="425.0" y="261.8" width="22.4" height="14.2" rx="2" fill="#70AD47"><title>AI书平均 · 4章: 0.4</title></rect><rect x="476.6" y="263.9" width="22.4" height="12.1" rx="2" fill="#5B9BD5"><title>续写书平均 · 5章: 0.34</title></rect><rect x="503.0" y="271.4" width="22.4" height="4.6" rx="2" fill="#ED7D31"><title>全站新书平均 · 5章: 0.13</title></rect><rect x="529.5" y="268.2" width="22.4" height="7.8" rx="2" fill="#70AD47"><title>AI书平均 · 5章: 0.22</title></rect><rect x="581.1" y="257.5" width="22.4" height="18.5" rx="2" fill="#5B9BD5"><title>续写书平均 · 6-10章: 0.52</title></rect><rect x="607.5" y="267.1" width="22.4" height="8.9" rx="2" fill="#ED7D31"><title>全站新书平均 · 6-10章: 0.25</title></rect><rect x="634.0" y="260.3" width="22.4" height="15.7" rx="2" fill="#70AD47"><title>AI书平均 · 6-10章: 0.44</title></rect><rect x="685.6" y="184.1" width="22.4" height="91.9" rx="2" fill="#5B9BD5"><title>续写书平均 · 11-20章: 2.58</title></rect><rect x="712.0" y="243.2" width="22.4" height="32.8" rx="2" fill="#ED7D31"><title>全站新书平均 · 11-20章: 0.92</title></rect><rect x="738.5" y="230.8" width="22.4" height="45.2" rx="2" fill="#70AD47"><title>AI书平均 · 11-20章: 1.27</title></rect><rect x="790.1" y="211.9" width="22.4" height="64.1" rx="2" fill="#5B9BD5"><title>续写书平均 · 21章+: 1.8</title></rect><rect x="816.5" y="49.9" width="22.4" height="226.1" rx="2" fill="#ED7D31"><title>全站新书平均 · 21章+: 6.35</title></rect><rect x="843.0" y="225.8" width="22.4" height="50.2" rx="2" fill="#70AD47"><title>AI书平均 · 21章+: 1.41</title></rect>
-      <text x="96.2" y="304" text-anchor="middle" class="cmp-axis">1章</text><text x="200.8" y="304" text-anchor="middle" class="cmp-axis">2章</text><text x="305.2" y="304" text-anchor="middle" class="cmp-axis">3章</text><text x="409.8" y="304" text-anchor="middle" class="cmp-axis">4章</text><text x="514.2" y="304" text-anchor="middle" class="cmp-axis">5章</text><text x="618.8" y="304" text-anchor="middle" class="cmp-axis">6-10章</text><text x="723.2" y="304" text-anchor="middle" class="cmp-axis">11-20章</text><text x="827.8" y="304" text-anchor="middle" class="cmp-axis">21章+</text>
-    </svg>
-    <div class="cmp-legend"><span><i style="background:#5B9BD5"></i>续写书平均</span><span><i style="background:#ED7D31"></i>全站新书平均</span><span><i style="background:#70AD47"></i>AI书平均</span></div>
-
-        </div>
-        <div class="card section toast-card" data-toast="同章节档中位数：按 1~21章+ 对比续写书 / 全站新书 / AI书">
-          <h2>同章节档 · 中位数</h2>
-          <p class="sub">横轴为章节档，柱为续写书 / 全站新书 / AI书收入中位数。</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 900 320" role="img" aria-label="对比柱状图">
-      <line x1="44" x2="880" y1="276.0" y2="276.0" class="cmp-grid"/><text x="38" y="279.0" text-anchor="end" class="cmp-axis">0</text><line x1="44" x2="880" y1="211.0" y2="211.0" class="cmp-grid"/><text x="38" y="214.0" text-anchor="end" class="cmp-axis">0.7</text><line x1="44" x2="880" y1="146.0" y2="146.0" class="cmp-grid"/><text x="38" y="149.0" text-anchor="end" class="cmp-axis">1.5</text><line x1="44" x2="880" y1="81.0" y2="81.0" class="cmp-grid"/><text x="38" y="84.0" text-anchor="end" class="cmp-axis">2.2</text><line x1="44" x2="880" y1="16.0" y2="16.0" class="cmp-grid"/><text x="38" y="19.0" text-anchor="end" class="cmp-axis">3.0</text>
-      <line x1="44" x2="880" y1="276.0" y2="276.0" stroke="#c5cdd8" stroke-width="1"/><rect x="58.6" y="276.0" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书中位 · 1章: 0</title></rect><rect x="85.0" y="275.1" width="22.4" height="1.5" rx="2" fill="#ED7D31"><title>全站新书中位 · 1章: 0.01</title></rect><rect x="111.5" y="276.0" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书中位 · 1章: 0</title></rect><rect x="163.1" y="276.0" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书中位 · 2章: 0</title></rect><rect x="189.5" y="274.2" width="22.4" height="1.8" rx="2" fill="#ED7D31"><title>全站新书中位 · 2章: 0.02</title></rect><rect x="216.0" y="276.0" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书中位 · 2章: 0</title></rect><rect x="267.6" y="276.0" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书中位 · 3章: 0</title></rect><rect x="294.0" y="274.2" width="22.4" height="1.8" rx="2" fill="#ED7D31"><title>全站新书中位 · 3章: 0.02</title></rect><rect x="320.5" y="276.0" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书中位 · 3章: 0</title></rect><rect x="372.1" y="276.0" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书中位 · 4章: 0</title></rect><rect x="398.5" y="273.4" width="22.4" height="2.6" rx="2" fill="#ED7D31"><title>全站新书中位 · 4章: 0.03</title></rect><rect x="425.0" y="258.5" width="22.4" height="17.5" rx="2" fill="#70AD47"><title>AI书中位 · 4章: 0.2</title></rect><rect x="476.6" y="258.5" width="22.4" height="17.5" rx="2" fill="#5B9BD5"><title>续写书中位 · 5章: 0.2</title></rect><rect x="503.0" y="272.5" width="22.4" height="3.5" rx="2" fill="#ED7D31"><title>全站新书中位 · 5章: 0.04</title></rect><rect x="529.5" y="276.0" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书中位 · 5章: 0</title></rect><rect x="581.1" y="240.9" width="22.4" height="35.1" rx="2" fill="#5B9BD5"><title>续写书中位 · 6-10章: 0.4</title></rect><rect x="607.5" y="270.7" width="22.4" height="5.3" rx="2" fill="#ED7D31"><title>全站新书中位 · 6-10章: 0.06</title></rect><rect x="634.0" y="258.5" width="22.4" height="17.5" rx="2" fill="#70AD47"><title>AI书中位 · 6-10章: 0.2</title></rect><rect x="685.6" y="49.9" width="22.4" height="226.1" rx="2" fill="#5B9BD5"><title>续写书中位 · 11-20章: 2.58</title></rect><rect x="712.0" y="264.6" width="22.4" height="11.4" rx="2" fill="#ED7D31"><title>全站新书中位 · 11-20章: 0.13</title></rect><rect x="738.5" y="170.8" width="22.4" height="105.2" rx="2" fill="#70AD47"><title>AI书中位 · 11-20章: 1.2</title></rect><rect x="790.1" y="118.3" width="22.4" height="157.7" rx="2" fill="#5B9BD5"><title>续写书中位 · 21章+: 1.8</title></rect><rect x="816.5" y="249.7" width="22.4" height="26.3" rx="2" fill="#ED7D31"><title>全站新书中位 · 21章+: 0.3</title></rect><rect x="843.0" y="151.6" width="22.4" height="124.4" rx="2" fill="#70AD47"><title>AI书中位 · 21章+: 1.42</title></rect>
-      <text x="96.2" y="304" text-anchor="middle" class="cmp-axis">1章</text><text x="200.8" y="304" text-anchor="middle" class="cmp-axis">2章</text><text x="305.2" y="304" text-anchor="middle" class="cmp-axis">3章</text><text x="409.8" y="304" text-anchor="middle" class="cmp-axis">4章</text><text x="514.2" y="304" text-anchor="middle" class="cmp-axis">5章</text><text x="618.8" y="304" text-anchor="middle" class="cmp-axis">6-10章</text><text x="723.2" y="304" text-anchor="middle" class="cmp-axis">11-20章</text><text x="827.8" y="304" text-anchor="middle" class="cmp-axis">21章+</text>
-    </svg>
-    <div class="cmp-legend"><span><i style="background:#5B9BD5"></i>续写书中位</span><span><i style="background:#ED7D31"></i>全站新书中位</span><span><i style="background:#70AD47"></i>AI书中位</span></div>
-
-        </div>
-        <div class="card section toast-card" data-toast="同章节档最高收入：按 1~21章+ 对比续写书 / 全站新书 / AI书">
-          <h2>同章节档 · 最高收入</h2>
-          <p class="sub">横轴为章节档，柱为续写书 / 全站新书 / AI书最高收入。</p>
-          
-    <svg class="cmp-svg" viewBox="0 0 900 320" role="img" aria-label="对比柱状图">
-      <line x1="44" x2="880" y1="276.0" y2="276.0" class="cmp-grid"/><text x="38" y="279.0" text-anchor="end" class="cmp-axis">0</text><line x1="44" x2="880" y1="211.0" y2="211.0" class="cmp-grid"/><text x="38" y="214.0" text-anchor="end" class="cmp-axis">157</text><line x1="44" x2="880" y1="146.0" y2="146.0" class="cmp-grid"/><text x="38" y="149.0" text-anchor="end" class="cmp-axis">314</text><line x1="44" x2="880" y1="81.0" y2="81.0" class="cmp-grid"/><text x="38" y="84.0" text-anchor="end" class="cmp-axis">471</text><line x1="44" x2="880" y1="16.0" y2="16.0" class="cmp-grid"/><text x="38" y="19.0" text-anchor="end" class="cmp-axis">628</text>
-      <line x1="44" x2="880" y1="276.0" y2="276.0" stroke="#c5cdd8" stroke-width="1"/><rect x="58.6" y="275.8" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 1章: 0.4</title></rect><rect x="85.0" y="266.3" width="22.4" height="9.7" rx="2" fill="#ED7D31"><title>全站新书最高 · 1章: 23.38</title></rect><rect x="111.5" y="275.8" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 1章: 0.4</title></rect><rect x="163.1" y="275.7" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 2章: 0.8</title></rect><rect x="189.5" y="272.7" width="22.4" height="3.3" rx="2" fill="#ED7D31"><title>全站新书最高 · 2章: 8.03</title></rect><rect x="216.0" y="275.7" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 2章: 0.8</title></rect><rect x="267.6" y="275.0" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 3章: 2.4</title></rect><rect x="294.0" y="251.5" width="22.4" height="24.5" rx="2" fill="#ED7D31"><title>全站新书最高 · 3章: 59.22</title></rect><rect x="320.5" y="275.0" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 3章: 2.4</title></rect><rect x="372.1" y="275.5" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 4章: 1.2</title></rect><rect x="398.5" y="268.3" width="22.4" height="7.7" rx="2" fill="#ED7D31"><title>全站新书最高 · 4章: 18.48</title></rect><rect x="425.0" y="275.5" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 4章: 1.2</title></rect><rect x="476.6" y="275.5" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 5章: 1.2</title></rect><rect x="503.0" y="272.6" width="22.4" height="3.4" rx="2" fill="#ED7D31"><title>全站新书最高 · 5章: 8.23</title></rect><rect x="529.5" y="275.5" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 5章: 1.2</title></rect><rect x="581.1" y="275.5" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 6-10章: 1.21</title></rect><rect x="607.5" y="267.4" width="22.4" height="8.6" rx="2" fill="#ED7D31"><title>全站新书最高 · 6-10章: 20.71</title></rect><rect x="634.0" y="275.5" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 6-10章: 1.21</title></rect><rect x="685.6" y="274.4" width="22.4" height="1.6" rx="2" fill="#5B9BD5"><title>续写书最高 · 11-20章: 3.93</title></rect><rect x="712.0" y="244.6" width="22.4" height="31.4" rx="2" fill="#ED7D31"><title>全站新书最高 · 11-20章: 75.73</title></rect><rect x="738.5" y="274.4" width="22.4" height="1.6" rx="2" fill="#70AD47"><title>AI书最高 · 11-20章: 3.93</title></rect><rect x="790.1" y="274.8" width="22.4" height="1.5" rx="2" fill="#5B9BD5"><title>续写书最高 · 21章+: 2.8</title></rect><rect x="816.5" y="49.9" width="22.4" height="226.1" rx="2" fill="#ED7D31"><title>全站新书最高 · 21章+: 545.7</title></rect><rect x="843.0" y="274.8" width="22.4" height="1.5" rx="2" fill="#70AD47"><title>AI书最高 · 21章+: 2.8</title></rect>
-      <text x="96.2" y="304" text-anchor="middle" class="cmp-axis">1章</text><text x="200.8" y="304" text-anchor="middle" class="cmp-axis">2章</text><text x="305.2" y="304" text-anchor="middle" class="cmp-axis">3章</text><text x="409.8" y="304" text-anchor="middle" class="cmp-axis">4章</text><text x="514.2" y="304" text-anchor="middle" class="cmp-axis">5章</text><text x="618.8" y="304" text-anchor="middle" class="cmp-axis">6-10章</text><text x="723.2" y="304" text-anchor="middle" class="cmp-axis">11-20章</text><text x="827.8" y="304" text-anchor="middle" class="cmp-axis">21章+</text>
-    </svg>
-    <div class="cmp-legend"><span><i style="background:#5B9BD5"></i>续写书最高</span><span><i style="background:#ED7D31"></i>全站新书最高</span><span><i style="background:#70AD47"></i>AI书最高</span></div>
-
-        </div>
-        <div class="card section">
-          <h2>按章节分档明细</h2>
-          <p class="sub">各档书籍数 / 平均 / 中位 / 最高。</p>
-          <div style="overflow:auto">
-            <table>
-              <thead><tr><th>章节档</th><th>续写书本数</th><th>续写书平均</th><th>续写书中位</th><th>续写书最高</th><th>全站新书本数</th><th>全站新书平均</th><th>全站新书中位</th><th>全站新书最高</th><th>AI书本数</th><th>AI书平均</th><th>AI书中位</th><th>AI书最高</th></tr></thead>
-              <tbody><tr><td>1章</td><td>238</td><td>0.09</td><td>0.00</td><td>0.40</td><td>6,219</td><td>0.08</td><td>0.01</td><td>23.38</td><td>419</td><td>0.06</td><td>0.00</td><td>0.40</td></tr><tr><td>2章</td><td>92</td><td>0.14</td><td>0.00</td><td>0.80</td><td>2,949</td><td>0.07</td><td>0.02</td><td>8.03</td><td>108</td><td>0.16</td><td>0.00</td><td>0.80</td></tr><tr><td>3章</td><td>69</td><td>0.28</td><td>0.00</td><td>2.40</td><td>2,109</td><td>0.11</td><td>0.02</td><td>59.22</td><td>73</td><td>0.29</td><td>0.00</td><td>2.40</td></tr><tr><td>4章</td><td>20</td><td>0.34</td><td>0.00</td><td>1.20</td><td>1,391</td><td>0.14</td><td>0.03</td><td>18.48</td><td>22</td><td>0.40</td><td>0.20</td><td>1.20</td></tr><tr><td>5章</td><td>6</td><td>0.34</td><td>0.20</td><td>1.20</td><td>1,024</td><td>0.13</td><td>0.04</td><td>8.23</td><td>9</td><td>0.22</td><td>0.00</td><td>1.20</td></tr><tr><td>6-10章</td><td>7</td><td>0.52</td><td>0.40</td><td>1.21</td><td>2,796</td><td>0.25</td><td>0.06</td><td>20.71</td><td>10</td><td>0.44</td><td>0.20</td><td>1.21</td></tr><tr><td>11-20章</td><td>2</td><td>2.58</td><td>2.58</td><td>3.93</td><td>2,025</td><td>0.92</td><td>0.13</td><td>75.73</td><td>5</td><td>1.27</td><td>1.20</td><td>3.93</td></tr><tr><td>21章+</td><td>2</td><td>1.80</td><td>1.80</td><td>2.80</td><td>1,487</td><td>6.35</td><td>0.30</td><td>545.70</td><td>4</td><td>1.41</td><td>1.42</td><td>2.80</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-      
-      <div class="summary-panel" data-summary-key="income-compare">
-        <div class="summary-head">
-          <h3>内容总结 · 收入对比</h3>
-          <span class="summary-hint">草稿存本机浏览器；写入公开站后才会出现在分享链接里</span>
-        </div>
-        <textarea
-          class="summary-input"
-          rows="4"
-          placeholder="在此记录本板块结论、异常点与下一步行动…"
-          aria-label="内容总结 · 收入对比"
-        ></textarea>
-        <div class="summary-foot">
-          <span class="summary-status" aria-live="polite"></span>
-          <span class="summary-actions">
-            <button type="button" class="summary-clear link-btn">清空</button>
-          </span>
-        </div>
-      </div>
-
-
-      </div>
-
-      <div class="foot">由 scripts/build_dashboard.py 自动生成 · SQL 修改日志 data/sql_modifications.json</div>
-    </div>
-
-    
-    <aside class="sidebar">
-      <div class="side-card">
-        <h2>SQL 修改记录</h2>
-        <p class="sub">点击「应用并刷新」会从 SQLPad 同步全部查询最新 SQL 并重跑；有 createTime 的查询会改写时间窗。</p>
-
-        <div class="current-mod">
-          <div class="current-head">
-            <span class="status ok">已改写</span>
-            <span class="days">共 30 天</span>
-          </div>
-          <div class="range-box">
-            <div>
-              <label>SQLPad 原文时间窗</label>
-              <div class="range-val">2026-07-22 00:00:00<br/>→ NOW()</div>
-            </div>
-            <div class="arrow">↓</div>
-            <div>
-              <label>本次实际执行时间窗</label>
-              <div class="range-val exec">2026-07-01 00:00:00<br/>→ 2026-07-30 23:59:59</div>
-            </div>
-          </div>
-          <p class="reason">手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <p class="tiny">查询：ai书籍</p>
-        </div>
-
-        <h3>修改统计时间</h3>
-        <form id="range-form" class="range-form" autocomplete="off">
-          <div class="field">
-            <label for="start-date">开始日期</label>
-            <input type="date" id="start-date" name="start" value="2026-07-01" required />
-          </div>
-          <div class="field">
-            <label for="end-date">结束日期</label>
-            <input type="date" id="end-date" name="end" value="2026-07-30" required />
-          </div>
-          <div class="presets">
-            <button type="button" class="chip" data-days="7">近7天</button>
-            <button type="button" class="chip" data-days="14">近14天</button>
-            <button type="button" class="chip" data-days="30">近30天</button>
-          </div>
-          <button type="submit" id="refresh-btn" class="primary-btn">应用并刷新</button>
-          <p id="form-msg" class="form-msg" aria-live="polite"></p>
-          <p class="tiny tip">请先运行 <code>python scripts/serve.py</code>，再用浏览器打开本地服务地址后在此改时间。</p>
-        </form>
-
-        <h3>历史记录</h3>
-        <div class="mod-list">
-          
-      <div class="mod-item active">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:19:46</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ NOW()</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <p>手动指定统计时间：2026-07-22 ~ 2026-07-29（共 8 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-22" data-end="2026-07-29">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:16:13</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-30</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-30">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:16:11</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:16:09</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:16:02</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-31</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-31">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:15:56</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-31</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-31">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:15:41</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-31</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-31">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:15:39</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ NOW()</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-30</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-30">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:15:36</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T20:13:50</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <p>手动指定统计时间：2026-07-22 ~ 2026-07-29（共 8 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-22" data-end="2026-07-29">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:48:22</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-30</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-30">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:48:20</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:48:18</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:48:11</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-31</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-31">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:48:05</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-31</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-31">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:47:47</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-31</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-31">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:47:44</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ NOW()</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-30</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-30">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T19:47:42</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T17:29:24</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>2026-07-22 ~ 2026-07-29</code></div>
-          <div class="mod-line"><span>执行</span><code>2026-07-01 ~ 2026-07-30</code></div>
-          <p>手动指定统计时间：2026-07-01 ~ 2026-07-30（共 30 天）</p>
-          <button type="button" class="link-btn" data-start="2026-07-01" data-end="2026-07-30">填入此时间</button>
-        </div>
-      </div>
-
-      <div class="mod-item ">
-        <div class="mod-item-top">
-          <span class="badge badge-manual">手动</span>
-          <time>2026-07-30T17:29:22</time>
-        </div>
-        <div class="mod-item-body">
-          <div class="mod-line"><span>原文</span><code>— ~ —</code></div>
-          <div class="mod-line"><span>执行</span><code>— ~ —</code></div>
-          <p>未改写：该 SQL 无 createTime/create_time 时间窗（全量口径）</p>
-          
-        </div>
-      </div>
-        </div>
-      </div>
-    </aside>
-
+    </section>
   </div>
+
   <script>
-  window.__DASHBOARD_SUMMARIES__ = {"mode-compare": "1.到第五章时，续写章节的创建留存为ai章节的1.7倍，证明续写功能对章节创建有较为显著的提升，\n2.到第五章时，续写的发布留存和ai章节的发布留存一致，证明多出来的那部分创建章节并没有选择发布。", "books-table-compare": "1.续写书籍且创建章节大于5章的留存明显高于ai模式，但发布留存小于ai模式，证明使用续写功能的那部分书籍发布意愿不强，更倾向于体验和玩法。", "continue_books_summary": "1.在创建不少于三章的书籍中，续写次数达到90次的书籍占比超过25%，每四个人就会有一个把次数用满，证明该功能对用户的吸引力还是比较强的。\n2.", "income-compare": "1.对于头部书籍，非ai书籍质量远高于ai书籍。\n2.对于质量中等以后的书籍，ai创作的书籍质量高于非ai书籍\n3.使用续写还是使用ai生成一整章，书籍的质量差别不大。"};
-  (function () {
-    var tabs = document.querySelectorAll(".top-tabs .tab");
-    tabs.forEach(function (tab) {
-      tab.addEventListener("click", function () {
-        var name = tab.getAttribute("data-tab");
-        tabs.forEach(function (t) {
-          t.classList.toggle("active", t === tab);
-          t.setAttribute("aria-selected", t === tab ? "true" : "false");
-        });
-        document.querySelectorAll(".tab-panel").forEach(function (p) {
-          p.classList.toggle("active", p.id === "panel-" + name);
-        });
-      });
-    });
+    const ROBOT_FAV_DAY_CAP = 10;
+    const INTERACT_DAILY_MAX = {
+      tip: 3, comment: 5, para: 5, fav: 10, flower: 10, checkin: 10,
+    };
 
-    // 内容总结：公开站用写入 HTML 的内容；本机另有浏览器草稿
-    (function initSummaryPanels() {
-      var PREFIX = "xuxie-dashboard-summary:";
-      var embedded = window.__DASHBOARD_SUMMARIES__ || {};
-      var panels = Array.prototype.slice.call(document.querySelectorAll(".summary-panel[data-summary-key]"));
+    /** 新版：作品累计字数档 × 单章更新字数档 → 人气脉冲（6h 分散） */
+    const UPDATE_BOOST_MATRIX = {
+      "0-1w": {
+        lt500: { minV: 50, maxV: 100, times: 3 },
+        "500-1000": { minV: 100, maxV: 150, times: 3 },
+        "1000-3000": { minV: 150, maxV: 300, times: 5 },
+        "3000-5000": { minV: 300, maxV: 500, times: 5 },
+      },
+      "1-3w": {
+        lt500: { minV: 50, maxV: 100, times: 5 },
+        "500-1000": { minV: 200, maxV: 300, times: 5 },
+        "1000-3000": { minV: 250, maxV: 400, times: 7 },
+        "3000-5000": { minV: 400, maxV: 500, times: 7 },
+      },
+      "3-5w": {
+        lt500: { minV: 100, maxV: 200, times: 5 },
+        "500-1000": { minV: 300, maxV: 400, times: 5 },
+        "1000-3000": { minV: 500, maxV: 600, times: 7 },
+        "3000-5000": { minV: 600, maxV: 800, times: 7 },
+      },
+    };
+    const UPDATE_BOOK_TIER_LABEL = {
+      "0-1w": "作品<1万",
+      "1-3w": "作品1~3万",
+      "3-5w": "作品3~5万+",
+    };
 
-      function collect() {
-        var out = {};
-        panels.forEach(function (panel) {
-          var key = panel.getAttribute("data-summary-key") || "";
-          var input = panel.querySelector(".summary-input");
-          if (!key || !input) return;
-          if (input.value && input.value.trim()) out[key] = input.value;
-        });
-        return out;
-      }
+    /** 旧版章节人气（对照）：发章触发；非首章≥1000 为 10×(150~400)/48h */
+    const OLD_CHAP = {
+      first_lt: { times: 3, hours: 6, min: 200, max: 500 },
+      first_ge: { times: 5, hours: 6, min: 400, max: 1000 },
+      chap_lt: { times: 5, hours: 48, min: 75, max: 200 },
+      chap_ge: { times: 10, hours: 48, min: 150, max: 400 },
+    };
+    /** 旧版收藏人气：每次被收藏触发 4 次脉冲；日上限固定 8000 */
+    const OLD_FAV = {
+      lt: { times: 4, hours: 6, min: 100, max: 250 },
+      ge: { times: 4, hours: 6, min: 200, max: 500 },
+    };
+    const OLD_DAILY_CAP = 8000;
 
-      function apiBase() {
-        var host = location.hostname || "";
-        if (host === "127.0.0.1" || host === "localhost") return location.origin;
-        return "";
-      }
-
-      panels.forEach(function (panel) {
-        var key = panel.getAttribute("data-summary-key") || "";
-        var input = panel.querySelector(".summary-input");
-        var status = panel.querySelector(".summary-status");
-        var clearBtn = panel.querySelector(".summary-clear");
-        if (!input || !key) return;
-        var storageKey = PREFIX + key;
-        var fromFile = embedded[key] || "";
-        var fromLocal = "";
-        try { fromLocal = localStorage.getItem(storageKey) || ""; } catch (e) {}
-        // 优先展示已写入公开站的内容；若无则回退本机草稿
-        input.value = fromFile || fromLocal || "";
-        function setStatus(text, ok) {
-          if (!status) return;
-          status.textContent = text || "";
-          status.className = "summary-status" + (ok ? " saved" : "");
-        }
-        function persistDraft() {
-          try {
-            localStorage.setItem(storageKey, input.value);
-            setStatus("草稿已存本机 " + new Date().toLocaleTimeString(), true);
-          } catch (e) {
-            setStatus("草稿保存失败", false);
-          }
-        }
-        var timer = null;
-        input.addEventListener("input", function () {
-          setStatus("输入中…", false);
-          if (timer) clearTimeout(timer);
-          timer = setTimeout(persistDraft, 400);
-        });
-        input.addEventListener("blur", persistDraft);
-        if (clearBtn) {
-          clearBtn.addEventListener("click", function () {
-            input.value = "";
-            try { localStorage.removeItem(storageKey); } catch (e) {}
-            setStatus("已清空", false);
-            input.focus();
-          });
-        }
-      });
-
-      function setPublishMsg(text, type) {
-        document.querySelectorAll("#summary-publish-msg").forEach(function (el) {
-          el.textContent = text || "";
-          el.className = "form-msg" + (type ? " " + type : "");
-        });
-      }
-
-      function postSummaries(payload, opts) {
-        opts = opts || {};
-        var body = Object.assign({}, payload);
-        if (opts.saveOnly) body.save_only = true;
-        if (opts.push === false) body.push = false;
-        return fetch(apiBase() + "/api/summaries", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        }).then(function (r) {
-          return r.json().then(function (data) {
-            return { okHttp: r.ok, data: data };
-          });
-        });
-      }
-
-      document.querySelectorAll("#summary-save-root-btn").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var base = apiBase();
-          if (!base) {
-            setPublishMsg("请先运行 python scripts/serve.py，再用 http://127.0.0.1:8765/ 打开看板", "err");
-            return;
-          }
-          btn.disabled = true;
-          setPublishMsg("正在保存到项目根目录…", "");
-          postSummaries(collect(), { saveOnly: true })
-            .then(function (res) {
-              if (!res.data || !res.data.ok) throw new Error((res.data && res.data.error) || "保存失败");
-              setPublishMsg(res.data.message || "已保存到根目录 summaries.json", "ok");
-            })
-            .catch(function (err) {
-              setPublishMsg((err && err.message) || "保存失败", "err");
-            })
-            .finally(function () { btn.disabled = false; });
-        });
-      });
-
-      document.querySelectorAll("#summary-import-btn").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var fileInput = document.getElementById("summary-import-file");
-          if (fileInput) fileInput.click();
-        });
-      });
-
-      var fileInput = document.getElementById("summary-import-file");
-      if (fileInput) {
-        fileInput.addEventListener("change", function () {
-          var file = fileInput.files && fileInput.files[0];
-          if (!file) return;
-          var reader = new FileReader();
-          reader.onload = function () {
-            try {
-              var data = JSON.parse(String(reader.result || "{}"));
-              panels.forEach(function (panel) {
-                var key = panel.getAttribute("data-summary-key") || "";
-                var input = panel.querySelector(".summary-input");
-                if (!input || !key) return;
-                if (data[key] != null) {
-                  input.value = String(data[key]);
-                  try { localStorage.setItem(PREFIX + key, input.value); } catch (e) {}
-                }
-              });
-              var base = apiBase();
-              if (base) {
-                postSummaries(collect(), { saveOnly: true })
-                  .then(function (res) {
-                    if (!res.data || !res.data.ok) throw new Error((res.data && res.data.error) || "保存失败");
-                    setPublishMsg("已导入并写入根目录 summaries.json", "ok");
-                  })
-                  .catch(function (err) {
-                    setPublishMsg("已导入到页面，但写根目录失败：" + ((err && err.message) || ""), "err");
-                  });
-              } else {
-                setPublishMsg("已导入到页面。请用本地服务打开后点「保存到项目根目录」", "ok");
-              }
-            } catch (e) {
-              setPublishMsg("导入失败：JSON 无效", "err");
-            }
-          };
-          reader.readAsText(file);
-          fileInput.value = "";
-        });
-      }
-
-      document.querySelectorAll("#summary-publish-btn").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var payload = collect();
-          var base = apiBase();
-          if (!base) {
-            setPublishMsg(
-              "请先运行 python scripts/serve.py，再用 http://127.0.0.1:8765/ 打开，才能自动写入根目录并推送",
-              "err"
-            );
-            return;
-          }
-          btn.disabled = true;
-          setPublishMsg("正在写入根目录并推送到 GitHub…", "");
-          postSummaries(payload, { push: true })
-            .then(function (res) {
-              if (!res.data || !res.data.ok) {
-                throw new Error((res.data && res.data.error) || "写入失败");
-              }
-              window.__DASHBOARD_SUMMARIES__ = payload;
-              setPublishMsg(
-                (res.data.message || "已写入"),
-                res.data.pushed ? "ok" : (res.data.push_error ? "err" : "ok")
-              );
-              if (res.data.pushed) {
-                setTimeout(function () { location.reload(); }, 900);
-              }
-            })
-            .catch(function (err) {
-              setPublishMsg((err && err.message) || "写入失败", "err");
-            })
-            .finally(function () {
-              btn.disabled = false;
-            });
-        });
-      });
-    })();
-
-    // 卡片悬停 toast（不依赖时间表单）
-    (function initHoverToast() {
-      var toast = document.createElement("div");
-      toast.className = "hover-toast";
-      toast.setAttribute("role", "status");
-      document.body.appendChild(toast);
-      var hideTimer = null;
-      function place(e) {
-        var pad = 14;
-        var x = e.clientX + pad;
-        var y = e.clientY + pad;
-        var rect = toast.getBoundingClientRect();
-        if (x + rect.width > window.innerWidth - 8) x = e.clientX - rect.width - pad;
-        if (y + rect.height > window.innerHeight - 8) y = e.clientY - rect.height - pad;
-        toast.style.left = Math.max(8, x) + "px";
-        toast.style.top = Math.max(8, y) + "px";
-      }
-      document.querySelectorAll(".toast-card[data-toast]").forEach(function (el) {
-        el.addEventListener("mouseenter", function (e) {
-          if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-          toast.textContent = el.getAttribute("data-toast") || "";
-          toast.classList.add("show");
-          place(e);
-        });
-        el.addEventListener("mousemove", place);
-        el.addEventListener("mouseleave", function () {
-          hideTimer = setTimeout(function () {
-            toast.classList.remove("show");
-          }, 80);
-        });
-      });
-    })();
-
-    var form = document.getElementById("range-form");
-    if (!form) return;
-    var startEl = document.getElementById("start-date");
-    var endEl = document.getElementById("end-date");
-    var btn = document.getElementById("refresh-btn");
-    var msg = document.getElementById("form-msg");
-    var tip = form.querySelector(".tip");
-
-    function setMsg(text, type) {
-      msg.textContent = text || "";
-      msg.className = "form-msg" + (type ? " " + type : "");
+    function mulberry32(a) {
+      return function () {
+        let t = (a += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function randInt(rng, lo, hi) {
+      return lo + Math.floor(rng() * (hi - lo + 1));
+    }
+    /** 区间内连续随机（补量值非整数） */
+    function randRange(rng, lo, hi) {
+      return lo + rng() * (hi - lo);
+    }
+    function fmt(n, d = 0) {
+      if (!Number.isFinite(n)) return "—";
+      return Number(n).toLocaleString("zh-CN", { maximumFractionDigits: d, minimumFractionDigits: d });
+    }
+    function fmtPop(n) {
+      if (!Number.isFinite(n)) return "—";
+      if (Math.abs(n) < 0.05) return "0";
+      return fmt(n, 1);
+    }
+    function pct(n) {
+      if (!Number.isFinite(n)) return "—";
+      return (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
     }
 
-    function isoDate(d) {
-      var y = d.getFullYear();
-      var m = String(d.getMonth() + 1).padStart(2, "0");
-      var day = String(d.getDate()).padStart(2, "0");
-      return y + "-" + m + "-" + day;
+    function bookUpdateTierKey(totalWords) {
+      const w = totalWords || 0;
+      if (w < 10000) return "0-1w";
+      if (w < 30000) return "1-3w";
+      return "3-5w"; // ≥3万及≥5万均按表内最高作品档
+    }
+    function chapterWordTierKey(chapterWords) {
+      const c = chapterWords || 0;
+      if (c < 500) return "lt500";
+      if (c < 1000) return "500-1000";
+      if (c < 3000) return "1000-3000";
+      return "3000-5000";
+    }
+    function pickUpdateBoost(bookWords, chapterWords) {
+      const bk = bookUpdateTierKey(bookWords);
+      const ck = chapterWordTierKey(chapterWords);
+      const row = UPDATE_BOOST_MATRIX[bk][ck];
+      return { ...row, hours: 6, bookTier: bk, chapterTier: ck };
+    }
+    function streakCoef(daysUpdatedIn7) {
+      if (daysUpdatedIn7 >= 7) return 2;
+      if (daysUpdatedIn7 >= 4) return 1.5;
+      if (daysUpdatedIn7 >= 2) return 1.2;
+      return 1;
+    }
+    /** 作品累计字数 → 字数阶段等级与日上限 */
+    function stageInfo(totalWords, yesterdayUv) {
+      const w = totalWords || 0;
+      const uv = yesterdayUv || 0;
+      if (w < 10000) {
+        return { key: "0-1w", name: "新书开篇(0~1万)", base: 1500, cap: uv >= 50 ? 3000 : 1500, lifted: uv >= 50 };
+      }
+      if (w < 30000) {
+        return { key: "1-3w", name: "前期成长(1~3万)", base: 3000, cap: uv >= 100 ? 5000 : 3000, lifted: uv >= 100 };
+      }
+      if (w < 50000) {
+        return { key: "3-5w", name: "稳定创作(3~5万)", base: 5000, cap: uv >= 200 ? 8000 : 5000, lifted: uv >= 200 };
+      }
+      if (w < 100000) {
+        return { key: "5-10w", name: "成长(5~10万)", base: 10000, cap: 10000, lifted: uv >= 500 };
+      }
+      return { key: "10w+", name: "长篇(>10万)", base: 10000, cap: 10000, lifted: false };
+    }
+    function stageCap(totalWords, yesterdayUv) {
+      return stageInfo(totalWords, yesterdayUv).cap;
+    }
+    function fmtWords(n) {
+      if (!Number.isFinite(n)) return "—";
+      if (n >= 10000) return (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) + "万";
+      return Math.round(n).toLocaleString("zh-CN");
     }
 
-    function fillPreset(days) {
-      var end = new Date();
-      var start = new Date();
-      start.setDate(end.getDate() - (days - 1));
-      startEl.value = isoDate(start);
-      endEl.value = isoDate(end);
+    /** 旧规则非首章：大部分当日入账 + 拖尾池次日叠加（日更稳态≈8000 平顶、波动小） */
+    function expandOldChapterPulses(times, hours, minV, maxV, rng, spillAcrossDays) {
+      if (!spillAcrossDays) {
+        return expandPulses(times, hours, minV, maxV, rng, true);
+      }
+      const pulses = [];
+      for (let i = 0; i < times; i++) {
+        const raw = randRange(rng, minV, maxV);
+        if (rng() < 0.85) {
+          pulses.push({ offsetHours: Math.pow(rng(), 1.2) * 16, raw, spill: 0 });
+        } else {
+          pulses.push({ offsetHours: 20 + rng() * 10, raw, spill: raw * 0.35 });
+        }
+      }
+      return pulses;
     }
 
-    form.querySelectorAll(".chip").forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        fillPreset(Number(chip.getAttribute("data-days") || 7));
-      });
-    });
+    function applyOldChapterPulses(oldStates, day, pulses, spillQueue) {
+      let sum = 0;
+      for (const p of pulses) {
+        sum += tryOldPulse(oldStates, day + p.offsetHours / 24, p.raw, "chap");
+        if (p.spill > 0) spillQueue.push({ day: day + 1, amount: p.spill });
+      }
+      return sum;
+    }
 
-    document.querySelectorAll(".link-btn[data-start]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        startEl.value = b.getAttribute("data-start") || "";
-        endEl.value = b.getAttribute("data-end") || "";
-        setMsg("已填入历史时间，点击「应用并刷新」生效", "ok");
-        startEl.focus();
-      });
-    });
+    function expandPulses(times, hours, minV, maxV, rng, frontLoad) {
+      const pulses = [];
+      const windowH = frontLoad ? Math.min(hours, 18) : hours;
+      for (let i = 0; i < times; i++) {
+        const raw = randRange(rng, minV, maxV);
+        let offsetHours;
+        if (frontLoad) {
+          offsetHours = Math.pow(rng(), 1.6) * windowH;
+        } else {
+          const slot = ((i + 0.5) / times) * windowH;
+          offsetHours = Math.max(0, Math.min(windowH, slot + (rng() - 0.5) * (windowH / times)));
+        }
+        pulses.push({ offsetHours, raw });
+      }
+      return pulses;
+    }
 
-    var apiBase = "";
-    var host = location.hostname || "";
-    var isLocalHost = host === "127.0.0.1" || host === "localhost" || host === "";
-    if (location.protocol === "http:" || location.protocol === "https:") {
-      if (isLocalHost) {
-        apiBase = location.origin;
-        if (tip) tip.style.display = "none";
+    function createDayState() {
+      return {
+        update: 0, interact: 0, total: 0, cappedOut: false, skipped: 0,
+        cap: 0, baseCap: 0, yesterdayUv: 0, lifted: false, stageName: "",
+        wordsEnd: 0,
+      };
+    }
+    function createOldDayState() {
+      return { total: 0, chap: 0, fav: 0, cappedOut: false, skipped: 0, cap: OLD_DAILY_CAP };
+    }
+
+    function refreshDayCap(st, words, yUv) {
+      const info = stageInfo(words, yUv);
+      st.cap = info.cap;
+      st.baseCap = info.base;
+      st.lifted = info.lifted;
+      st.stageName = info.name;
+      st.yesterdayUv = yUv;
+      if (st.total >= st.cap - 1e-9) st.cappedOut = true;
+    }
+
+    /** 触发即补全额；若补前已达上限则跳过；补后若已≥上限则今日停补 */
+    function tryPulse(dayStates, dayIndex, amount, bucket) {
+      if (dayIndex < 0 || dayIndex >= dayStates.length) return 0;
+      const st = dayStates[dayIndex];
+      if (amount <= 0) return 0;
+      if (st.cappedOut || st.total >= st.cap - 1e-9) {
+        st.cappedOut = true;
+        st.skipped += amount;
+        return 0;
+      }
+      st.total += amount;
+      if (bucket) st[bucket] += amount;
+      if (st.total >= st.cap - 1e-9) st.cappedOut = true;
+      return amount;
+    }
+
+    /** 旧规则：脉冲可跨日落点；落点日若已触顶则停补 */
+    function tryOldPulse(oldStates, dayFloat, amount, bucket) {
+      const dayIndex = Math.floor(dayFloat);
+      if (dayIndex < 0 || dayIndex >= oldStates.length) return 0;
+      return tryPulse(oldStates, dayIndex, amount, bucket);
+    }
+
+    /** 稀疏真实 UV：多数天为 0，偶发围绕基准波动 */
+    function genUvSeries(days, baseUv, pubCount, rng) {
+      const uv = Array(days).fill(0);
+      if (baseUv <= 0) return uv;
+      for (let d = 0; d < days; d++) {
+        const hasPub = pubCount[d] > 0;
+        const pZero = baseUv < 30 ? (hasPub ? 0.7 : 0.9) : (hasPub ? 0.38 : 0.58);
+        if (rng() < pZero) continue;
+        const spread = 0.35 + rng() * 1.65;
+        uv[d] = Math.max(0, Math.round(baseUv * spread + randRange(rng, -baseUv * 0.12, baseUv * 0.18)));
+      }
+      return uv;
+    }
+
+    function addToDay(arr, dayFloat, value) {
+      const i = Math.floor(dayFloat);
+      if (i < 0 || i >= arr.length) return;
+      arr[i] += value;
+    }
+
+    /** 机器人发章收藏 —— 行为不变 */
+    function planRobotFavsOnChapter(isFirst, chapterWords, rng) {
+      if (isFirst) {
+        if (chapterWords < 500) return 0;
+        return randInt(rng, 1, 5);
+      }
+      if (rng() >= 0.1) return 0;
+      if (chapterWords < 1000) return 1;
+      return randInt(rng, 1, 3);
+    }
+
+    function scheduleUpdateDays(pace, days, rng) {
+      const out = [];
+      if (pace === "high") {
+        for (let d = 0; d < days; d++) if (rng() < 0.95) out.push(d);
+      } else if (pace === "mid") {
+        for (let d = 0; d < days; d++) if (rng() < 0.48) out.push(d);
+      } else if (pace === "low") {
+        for (let d = 0; d < days; d++) if (rng() < 0.2) out.push(d);
       } else {
-        // GitHub Pages 等公开静态站：只读浏览，不走本地刷新 API
-        apiBase = "";
-        if (btn) btn.disabled = true;
-        if (tip) {
-          tip.innerHTML = "当前为公开只读站：可浏览全部图表与总结；改时间窗请在本地运行 <code>python scripts/serve.py</code>。";
-          tip.style.display = "";
-        }
+        for (let d = 0; d < Math.min(7, days); d++) out.push(d);
       }
-    } else {
-      apiBase = "http://127.0.0.1:8765";
+      if (!out.includes(0)) out.unshift(0);
+      return [...new Set(out)].sort((a, b) => a - b);
     }
 
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      if (!apiBase) {
-        setMsg("公开站仅供浏览，无法在此改时间刷新", "err");
-        return;
+    function countUpdatesInWindow(updateSet, day, window) {
+      let n = 0;
+      for (let i = 0; i < window; i++) {
+        if (updateSet.has(day - i)) n += 1;
       }
-      var start = startEl.value;
-      var end = endEl.value;
-      if (!start || !end) {
-        setMsg("请填写开始与结束日期", "err");
-        return;
+      return n;
+    }
+
+    let chartDaily, chartParts;
+
+    function buildSim() {
+      const days = Math.max(14, Number(document.getElementById("simDays").value) || 30);
+      const pace = document.getElementById("updatePace").value;
+      const chapterWords = Number(document.getElementById("chapterWords").value) || 2000;
+      const wordsWan = Number(document.getElementById("wordsWan").value) || 0;
+      const seed = Number(document.getElementById("seed").value) || 1;
+      const favStart = Number(document.getElementById("favStart").value) || 0;
+      const baseUv = Number(document.getElementById("baseUv").value) || 0;
+      const interactHeat = document.getElementById("interactHeat").value;
+      const showOld = document.getElementById("showOld").checked;
+
+      const rng = mulberry32(seed >>> 0);
+      const rng2 = mulberry32((seed + 91) >>> 0);
+      const rngUv = mulberry32((seed + 173) >>> 0);
+      const rngOldFin = mulberry32((seed + 311) >>> 0);
+      const updateDays = scheduleUpdateDays(pace, days, rng);
+      const updateSet = new Set(updateDays);
+
+      const oldDayStates = Array.from({ length: days }, createOldDayState);
+      const robotFavCount = Array(days).fill(0);
+      const pubCount = Array(days).fill(0);
+      const coefArr = Array(days).fill(1);
+      const dayStates = Array.from({ length: days }, createDayState);
+
+      let favorites = favStart;
+      let chapterIndex = 0;
+      const robotByDay = {};
+      let robotTotal = 0;
+      const interactUsed = Array.from({ length: days }, () => ({
+        tip: 0, comment: 0, para: 0, fav: 0, flower: 0, checkin: 0,
+      }));
+
+      // —— 第一遍：仅排期发章次数（供 UV 序列与第二遍补量）——
+      for (const d of updateDays) {
+        if (d >= days) continue;
+        let pubs = 1;
+        if (pace === "high") {
+          if (rng() < 0.5) pubs += 1;
+          if (rng() < 0.2) pubs += 1;
+        } else if (pace === "mid" && rng() < 0.3) pubs += 1;
+        pubCount[d] = pubs;
+        const streak = countUpdatesInWindow(updateSet, d, 7);
+        coefArr[d] = streakCoef(streak);
       }
-      if (start > end) {
-        setMsg("开始日期不能晚于结束日期", "err");
-        return;
+
+      const uvSeries = genUvSeries(days, baseUv, pubCount, rngUv);
+
+      function canInteract(day, key) {
+        const d = Math.floor(day);
+        if (d < 0 || d >= days) return false;
+        return interactUsed[d][key] < INTERACT_DAILY_MAX[key];
       }
-      btn.disabled = true;
-      setMsg("正在按新时间窗拉数并刷新看板…", "");
-      fetch(apiBase + "/api/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ start: start, end: end })
-      })
-        .then(function (r) {
-          return r.json().then(function (data) {
-            return { okHttp: r.ok, data: data };
-          });
-        })
-        .then(function (res) {
-          if (!res.data || !res.data.ok) {
-            throw new Error((res.data && res.data.error) || "刷新失败");
+      function useInteract(day, key) {
+        const d = Math.floor(day);
+        interactUsed[d][key] += 1;
+      }
+
+      function fireNewInteract(day, key, minV, maxV, rngX) {
+        const d = Math.floor(day);
+        if (!canInteract(day, key)) return 0;
+        useInteract(day, key);
+        const raw = randRange(rngX, minV, maxV);
+        return tryPulse(dayStates, d, raw, "interact");
+      }
+
+      /** 旧规则收藏补量：每次被藏触发 4 次脉冲，独立走 8000 日上限 */
+      function fireOldFav(day, rngX) {
+        const rule = favorites < 500 ? OLD_FAV.lt : OLD_FAV.ge;
+        const pulses = expandPulses(rule.times, rule.hours, rule.min, rule.max, rngX, false);
+        let s = 0;
+        for (const p of pulses) {
+          s += tryOldPulse(oldDayStates, day + p.offsetHours / 24, p.raw, "fav");
+        }
+        return s;
+      }
+
+      /** 旧规则章节补量：6h 规则当日落点；48h 规则带拖尾池 */
+      function fireOldChapter(day, isFirst, chapterWords, rngX, oldStates, spillQueue) {
+        const oldRule = isFirst
+          ? (chapterWords < 1000 ? OLD_CHAP.first_lt : OLD_CHAP.first_ge)
+          : (chapterWords < 1000 ? OLD_CHAP.chap_lt : OLD_CHAP.chap_ge);
+        const spreadAcrossDays = oldRule.hours > 12;
+        const pulses = expandOldChapterPulses(oldRule.times, oldRule.hours, oldRule.min, oldRule.max, rngX, spreadAcrossDays);
+        return applyOldChapterPulses(oldStates, day, pulses, spillQueue);
+      }
+
+      function execRobotFavs(day, count, rngX) {
+        let done = 0;
+        for (let i = 0; i < count; i++) {
+          const dk = Math.floor(day);
+          robotByDay[dk] = robotByDay[dk] || 0;
+          if (robotByDay[dk] >= ROBOT_FAV_DAY_CAP) break;
+          robotByDay[dk] += 1;
+          robotTotal += 1;
+          favorites += 1;
+          const execDay = day + (i + rngX() * 0.3) / Math.max(count, 1) * (3 / 24);
+          // 新：收藏互动（受新规则日上限约束）
+          fireNewInteract(execDay, "fav", 200, 300, rngX);
+          // 旧：每次藏独立触发收藏补量（受旧规则 8000 约束）
+          fireOldFav(execDay, rngX);
+          if (dk >= 0 && dk < days) robotFavCount[dk] += 1;
+          done += 1;
+        }
+        return done;
+      }
+
+      // —— 第二遍：按日触发；新旧规则独立结算 ——
+      let wordsCursor = Math.max(0, wordsWan * 10000);
+      let stillFirstChapter = wordsCursor < 1000;
+      const oldSpillQueue = [];
+      for (let d = 0; d < days; d++) {
+        const yUv = d === 0 ? baseUv : uvSeries[d - 1];
+        let wordsToday = wordsCursor;
+        refreshDayCap(dayStates[d], wordsToday, yUv);
+
+        // 旧规则：昨日 48h 拖尾池入账
+        for (let i = oldSpillQueue.length - 1; i >= 0; i--) {
+          if (oldSpillQueue[i].day <= d) {
+            tryOldPulse(oldDayStates, d, oldSpillQueue[i].amount, "chap");
+            oldSpillQueue.splice(i, 1);
           }
-          setMsg(res.data.message || "刷新成功，正在重新加载…", "ok");
-          setTimeout(function () {
-            location.href = (apiBase.replace(/\/$/, "") + "/dashboard.html?t=" + Date.now());
-          }, 600);
-        })
-        .catch(function (err) {
-          btn.disabled = false;
-          setMsg(
-            (err && err.message ? err.message : "刷新失败") +
-              "。请确认已运行 python scripts/serve.py",
-            "err"
-          );
+        }
+
+        if (pubCount[d] > 0) {
+          const coef = coefArr[d];
+          for (let p = 0; p < pubCount[d]; p++) {
+            const isFirst = stillFirstChapter;
+            if (stillFirstChapter) stillFirstChapter = false;
+            wordsToday += chapterWords;
+            chapterIndex += 1;
+            refreshDayCap(dayStates[d], wordsToday, yUv);
+
+            const pubOffset = d + p * 0.05;
+
+            fireOldChapter(pubOffset, isFirst, chapterWords, rng, oldDayStates, oldSpillQueue);
+
+            // 新规则：更新补量
+            const boost = pickUpdateBoost(wordsToday, chapterWords);
+            const pulses = expandPulses(boost.times, boost.hours, boost.minV, boost.maxV, rng, true);
+            for (const pul of pulses) {
+              tryPulse(dayStates, d, pul.raw * coef, "update");
+              if (dayStates[d].cappedOut) break;
+            }
+
+            // 机器人收藏：新旧都走，但各自日上限独立
+            const planned = planRobotFavsOnChapter(isFirst, chapterWords, rng);
+            if (planned > 0) execRobotFavs(pubOffset, planned, rng);
+          }
+        }
+
+        wordsCursor = wordsToday;
+        dayStates[d].wordsEnd = wordsCursor;
+
+        // 旧规则稳态：日更+≥1000字且近7天持续更新时，作者端趋势贴近 8000 顶栏（小幅浮动）
+        const streak7 = countUpdatesInWindow(updateSet, d, 7);
+        const matureBook = chapterIndex > 1 || wordsWan * 10000 >= 1000;
+        if (
+          pubCount[d] > 0 &&
+          chapterWords >= 1000 &&
+          matureBook &&
+          streak7 >= 4 &&
+          oldDayStates[d].total >= 4200
+        ) {
+          const jitter = randRange(rngOldFin, 4, 185);
+          oldDayStates[d].total = OLD_DAILY_CAP + jitter;
+          oldDayStates[d].cappedOut = true;
+        }
+      }
+
+      // —— 稀疏真实互动 ——
+      if (interactHeat !== "none") {
+        const pMap = { cold: 0.08, mid: 0.2, hot: 0.4 };
+        const p = pMap[interactHeat] || 0;
+        for (let d = 0; d < days; d++) {
+          if (!dayStates[d].cappedOut) {
+            if (rng2() < p) fireNewInteract(d, "comment", 200, 300, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.5) fireNewInteract(d, "para", 150, 200, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.4) fireNewInteract(d, "flower", 50, 100, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.25) fireNewInteract(d, "checkin", 50, 100, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.15) fireNewInteract(d, "tip", 500, 700, rng2);
+          }
+          if (rng2() < p * 0.35) {
+            favorites += 1;
+            if (!dayStates[d].cappedOut) fireNewInteract(d, "fav", 200, 300, rng2);
+            fireOldFav(d, rng2);
+          }
+        }
+      }
+
+      // —— 汇总输出 ——
+      const labels = [];
+      const finalNew = [];
+      const finalOld = [];
+      const updSeries = [];
+      const intSeries = [];
+      const skipSeries = [];
+      const capArr = [];
+      const baseCapArr = [];
+      const yUvArr = [];
+      const wordsEndArr = [];
+      const stageNameArr = [];
+      let sumNew = 0, sumOld = 0, capHits = 0, zeroDays = 0;
+      let sumOnUpdateNew = 0, sumOnUpdateOld = 0, updateDayN = 0;
+      let oldCapHits = 0;
+      const stageTransitions = [];
+      let prevStageKey = stageInfo(Math.max(0, wordsWan * 10000), baseUv).key;
+
+      for (let d = 0; d < days; d++) {
+        const st = dayStates[d];
+        const ost = oldDayStates[d];
+        labels.push("D" + d);
+        wordsEndArr[d] = st.wordsEnd;
+        stageNameArr[d] = st.stageName;
+        yUvArr[d] = st.yesterdayUv;
+        baseCapArr[d] = st.baseCap;
+        capArr[d] = st.cap;
+
+        const fin = st.total;
+        const old = ost.total;
+        if (st.skipped > 0.5) capHits += 1;
+        if (ost.skipped > 0.5 || ost.cappedOut) oldCapHits += 1;
+
+        finalNew.push(+fin.toFixed(1));
+        finalOld.push(+old.toFixed(1));
+        updSeries.push(+st.update.toFixed(1));
+        intSeries.push(+st.interact.toFixed(1));
+        skipSeries.push(+st.skipped.toFixed(1));
+
+        const stageKey = stageInfo(st.wordsEnd, st.yesterdayUv).key;
+        if (stageKey !== prevStageKey) {
+          stageTransitions.push(`D${d}→${st.stageName.split("(")[0]}`);
+          prevStageKey = stageKey;
+        }
+
+        sumNew += fin;
+        sumOld += old;
+        if (fin < 0.5) zeroDays += 1;
+        if (pubCount[d] > 0) {
+          sumOnUpdateNew += fin;
+          sumOnUpdateOld += old;
+          updateDayN += 1;
+        }
+      }
+
+      const avgNew = sumNew / days;
+      const avgOld = sumOld / days;
+      const avgUpdateDay = updateDayN ? sumOnUpdateNew / updateDayN : 0;
+      const avgUpdateOld = updateDayN ? sumOnUpdateOld / updateDayN : 0;
+      const peakNew = Math.max(...finalNew);
+      const peakOld = Math.max(...finalOld);
+      const startSt = stageInfo(Math.max(0, wordsWan * 10000), baseUv);
+      const endSt = stageInfo(wordsCursor, uvSeries[days - 1] ?? baseUv);
+      const transText = stageTransitions.length ? stageTransitions.join(" · ") : "无跃迁（全程同档）";
+      const liftedDays = dayStates.filter((s) => s.lifted).length;
+      const oldNearTop = finalOld.filter((v) => v >= 7000).length;
+      const oldSteady = finalOld.slice(2);
+      const oldAvgSteady = oldSteady.length ? oldSteady.reduce((a, b) => a + b, 0) / oldSteady.length : 0;
+      const oldStd = oldSteady.length
+        ? Math.sqrt(oldSteady.reduce((s, v) => s + Math.pow(v - oldAvgSteady, 2), 0) / oldSteady.length)
+        : 0;
+
+      document.getElementById("sim-stats").innerHTML = `
+        <div class="stat"><div class="k">发章日 · 新规则均值</div><div class="v">${fmtPop(avgUpdateDay)}</div><div class="d">峰值 ${fmtPop(peakNew)} · 旧发章日均 ${fmtPop(avgUpdateOld)}</div></div>
+        <div class="stat"><div class="k">日均虚拟 · 新</div><div class="v ${avgNew < avgOld ? "down" : "up"}">${fmtPop(avgNew)}</div><div class="d">旧日均 ${fmtPop(avgOld)} · ${pct((avgNew - avgOld) / (avgOld || 1))}</div></div>
+        <div class="stat"><div class="k">旧规则稳态（D2+）</div><div class="v" style="font-size:15px">≈${fmtPop(oldAvgSteady)}</div><div class="d">≥7k天 ${oldNearTop}/${days} · 波动 σ≈${fmtPop(oldStd)}</div></div>
+        <div class="stat"><div class="k">新规则字数阶段</div><div class="v" style="font-size:15px;line-height:1.35">${startSt.name.split("(")[0]} → ${endSt.name.split("(")[0]}</div><div class="d">昨UV抬档 ${liftedDays}天 · 机器人藏 ${robotTotal}</div></div>
+      `;
+
+      const yScale = {
+        title: { display: true, text: "虚拟人气" },
+        grid: { color: "#f5f5f4" },
+      };
+      if (showOld && oldAvgSteady >= 6500) {
+        yScale.min = 6500;
+        yScale.max = Math.max(8600, peakOld * 1.02);
+      }
+
+      const common = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { title: { display: true, text: "模拟日" }, ticks: { maxTicksLimit: 12 }, grid: { color: "#f5f5f4" } },
+          y: yScale,
+        },
+      };
+
+      if (chartDaily) chartDaily.destroy();
+      const datasets = [
+        {
+          label: "新规则最终虚拟",
+          data: finalNew,
+          borderColor: "#0f766e",
+          backgroundColor: "rgba(15,118,110,0.1)",
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+        },
+      ];
+      if (showOld) {
+        datasets.unshift({
+          label: "旧规则虚拟（对照）",
+          data: finalOld,
+          borderColor: "#a8a29e",
+          borderWidth: 1.5,
+          pointRadius: 0,
+          borderDash: [4, 3],
         });
+      }
+      datasets.push({
+        label: "字数阶段日上限",
+        data: capArr,
+        borderColor: "#0369a1",
+        borderWidth: 1.5,
+        pointRadius: 0,
+        borderDash: [6, 4],
+        stepped: true,
+      });
+      chartDaily = new Chart(document.getElementById("chartDaily"), {
+        type: "line",
+        data: { labels, datasets },
+        options: common,
+      });
+
+      if (chartParts) chartParts.destroy();
+      chartParts = new Chart(document.getElementById("chartParts"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "更新补量", data: updSeries, backgroundColor: "#c2410c", stack: "a" },
+            { label: "互动补量", data: intSeries, backgroundColor: "#ea580c", stack: "a" },
+            { label: "触顶停补(未加)", data: skipSeries.map((v) => -v), backgroundColor: "#a8a29e", stack: "a" },
+          ],
+        },
+        options: {
+          ...common,
+          scales: {
+            ...common.scales,
+            x: { ...common.scales.x, stacked: true },
+            y: { ...common.scales.y, stacked: true },
+          },
+        },
+      });
+
+      document.querySelector("#day-table tbody").innerHTML = labels
+        .map((lb, i) => {
+          const delta = finalOld[i] === 0 ? (finalNew[i] > 0 ? 1 : 0) : (finalNew[i] - finalOld[i]) / finalOld[i];
+          const cls = delta < -0.05 ? "tone-down" : delta > 0.05 ? "tone-up" : "";
+          const added = pubCount[i] * chapterWords;
+          const stageShort = (stageNameArr[i] || "").replace(/\(.+\)/, "");
+          const liftMark = dayStates[i].lifted ? "↑" : "";
+          return `<tr>
+            <td>${lb}</td>
+            <td>${pubCount[i]}</td>
+            <td>${added ? fmtWords(added) : "—"}</td>
+            <td>${fmtWords(wordsEndArr[i])}</td>
+            <td title="${stageNameArr[i]}">${stageShort}</td>
+            <td>${yUvArr[i]}</td>
+            <td>${fmt(baseCapArr[i])}</td>
+            <td>${fmtPop(capArr[i])}${liftMark}</td>
+            <td>${countUpdatesInWindow(updateSet, i, 7)}</td>
+            <td>×${coefArr[i]}</td>
+            <td>${robotFavCount[i]}</td>
+            <td>${fmtPop(updSeries[i])}</td>
+            <td>${fmtPop(intSeries[i])}</td>
+            <td>${skipSeries[i] > 0 ? fmtPop(skipSeries[i]) : "—"}</td>
+            <td>${fmtPop(finalNew[i])}</td>
+            <td>${fmtPop(finalOld[i])}</td>
+            <td class="${cls}">${pct(delta)}</td>
+          </tr>`;
+        })
+        .join("");
+    }
+
+    document.querySelectorAll(".tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      });
     });
-  })();
+
+    document.getElementById("btn-sim").addEventListener("click", () => {
+      document.getElementById("seed").value = String((Number(document.getElementById("seed").value) || 0) + 1);
+      buildSim();
+    });
+    ["simDays", "updatePace", "chapterWords", "wordsWan", "seed", "favStart", "baseUv", "interactHeat", "showOld"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", buildSim);
+    });
+    document.getElementById("btn-newbook").addEventListener("click", () => {
+      document.getElementById("updatePace").value = "high";
+      document.getElementById("chapterWords").value = "2000";
+      document.getElementById("wordsWan").value = "0";
+      document.getElementById("baseUv").value = "5";
+      document.getElementById("interactHeat").value = "none";
+      document.getElementById("simDays").value = 60;
+      buildSim();
+    });
+    document.getElementById("btn-daily").addEventListener("click", () => {
+      document.getElementById("updatePace").value = "high";
+      document.getElementById("chapterWords").value = "2000";
+      document.getElementById("wordsWan").value = "3";
+      document.getElementById("baseUv").value = "5";
+      document.getElementById("favStart").value = "600";
+      document.getElementById("interactHeat").value = "cold";
+      document.getElementById("simDays").value = 30;
+      buildSim();
+    });
+    document.getElementById("btn-grow").addEventListener("click", () => {
+      document.getElementById("updatePace").value = "high";
+      document.getElementById("chapterWords").value = "2000";
+      document.getElementById("wordsWan").value = "6";
+      document.getElementById("baseUv").value = "220";
+      document.getElementById("interactHeat").value = "mid";
+      document.getElementById("simDays").value = 30;
+      buildSim();
+    });
+
+    buildSim();
   </script>
 </body>
 </html>
