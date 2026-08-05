@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>新版人气值补量 · 推算模型</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f1ea; --ink: #1c1917; --muted: #78716c; --line: #e7e5e4;
+      --card: #fff; --accent: #0f766e; --accent-soft: #ccfbf1; --danger: #b91c1c;
+      --font: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: var(--font); color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 0% 0%, #d8f3ef, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 100% 0%, #fde8d8, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 20px 72px; }
+    h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 18px; max-width: 860px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab {
+      border: 1px solid var(--line); background: var(--card); color: var(--muted);
+      padding: 8px 14px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 14px; }
+    @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+    }
+    .card h2 { margin: 0 0 10px; font-size: 13px; color: var(--muted); font-weight: 650; }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 8px;
+      padding: 8px 10px; font: inherit; font-size: 13px; background: #fff;
+    }
+    textarea {
+      min-height: 160px; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; line-height: 1.45; resize: vertical;
+    }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    @media (max-width: 800px) { .stats { grid-template-columns: 1fr 1fr; } }
+    .stat {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    }
+    .stat .k { font-size: 12px; color: var(--muted); }
+    .stat .v { font-size: 20px; font-weight: 700; margin-top: 4px; letter-spacing: -0.03em; }
+    .stat .v.down { color: var(--danger); }
+    .stat .v.up { color: var(--accent); }
+    .stat .d { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .chart-box { position: relative; height: 300px; }
+    .chart-box.sm { height: 230px; }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 10px; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    button.btn {
+      border: none; background: var(--accent); color: #fff; border-radius: 8px;
+      padding: 9px 14px; font: inherit; font-size: 13px; cursor: pointer;
+    }
+    button.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .formula {
+      font-size: 12.5px; line-height: 1.65; background: #fafaf9; border: 1px solid var(--line);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    }
+    .formula code {
+      background: var(--accent-soft); color: var(--accent); padding: 1px 5px; border-radius: 4px; font-size: 12px;
+    }
+    table.data { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.data th, table.data td {
+      border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: right; white-space: nowrap;
+    }
+    table.data th:first-child, table.data td:first-child { text-align: left; }
+    table.data th { color: var(--muted); font-weight: 600; }
+    .tone-down { color: var(--danger); }
+    .tone-up { color: var(--accent); }
+    .scroll { overflow: auto; max-height: 360px; }
+    .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; }
+    .check input { width: auto; }
+    .pill {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent); margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>新版人气值补量 · 推算模型</h1>
+    <p class="sub">
+      按《新版人气值补量规则》：
+      <code>最终虚拟 = MIN(更新补量 + 互动补量, 字数阶段上限)</code>。
+      <strong>更新补量</strong>由「作品累计字数档 × 单章更新字数档」二维表决定，再 × 连续更新系数。
+      <strong>发布章节后的机器人收藏行为不变</strong>；机器人收藏仍可触发新版「收藏」互动补量（+200~300，日最多 10 次）。
+      可对照旧规则跑同一随机种子的数值影响。
+    </p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="sim">跑数模拟</button>
+      <button class="tab" data-tab="rules">新规则速查</button>
+      <button class="tab" data-tab="vs">新旧对照说明</button>
+    </div>
+
+    <section id="panel-sim" class="panel active">
+      <div class="formula">
+        更新补量 = 作品字数档 × 单章字数档 的脉冲合计 × 近7天连续更新系数；
+        互动补量 = 收藏/评论/段评/鲜花/打赏/打卡（含机器人触发的收藏）；
+        日终 = 每次触发在区间内随机补量，当日累计≥上限后停止后续补量；
+        日上限由<strong>当日累计字数阶段</strong>与<strong>前一日真实 UV</strong>抬档共同决定。
+      </div>
+      <div class="stats" id="sim-stats"></div>
+      <div class="grid">
+        <div class="card">
+          <h2>情景参数</h2>
+          <label>更新节奏</label>
+          <select id="updatePace">
+            <option value="high" selected>日更（近7天易满勤 ×2）</option>
+            <option value="mid">中更新（约每2天）</option>
+            <option value="low">低更新（约每5天）</option>
+            <option value="burst">前7天日更后停更</option>
+          </select>
+          <div class="row2">
+            <div>
+              <label>单章字数</label>
+              <select id="chapterWords">
+                <option value="400">&lt;500（约400）</option>
+                <option value="800">500~1000（约800）</option>
+                <option value="2000" selected>1000~3000（约2000）</option>
+                <option value="4000">3000~5000（约4000）</option>
+              </select>
+            </div>
+            <div>
+              <label>模拟天数</label>
+              <input id="simDays" type="number" min="14" max="120" value="30" />
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label>开书已有字数（万）</label>
+              <input id="wordsWan" type="number" min="0" step="0.1" value="0.5" title="发章后会按「开书+累加」升级字数阶段上限" />
+            </div>
+            <div>
+              <label>随机种子</label>
+              <input id="seed" type="number" value="42" />
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label>起始全书收藏</label>
+              <input id="favStart" type="number" min="0" value="80" />
+            </div>
+            <div>
+              <label>基准 UV（生成稀疏昨UV）</label>
+              <input id="baseUv" type="number" min="0" value="5" title="模拟前一日真实UV：多数天为0，偶发围绕基准波动；D0 直接用此值抬档" />
+            </div>
+          </div>
+          <label>真实互动稀疏度（非机器人）</label>
+          <select id="interactHeat">
+            <option value="none">无真实互动</option>
+            <option value="cold" selected>偶发（长尾）</option>
+            <option value="mid">中等</option>
+            <option value="hot">活跃</option>
+          </select>
+          <div class="check">
+            <input id="showOld" type="checkbox" checked />
+            <label for="showOld" style="margin:0">同时画旧规则（同种子·同机器人日程，日上限固定8000）</label>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-sim">重新掷骰跑数</button>
+            <button class="btn ghost" id="btn-newbook">新书从零开更</button>
+            <button class="btn ghost" id="btn-daily">日更长尾</button>
+            <button class="btn ghost" id="btn-grow">成长期有UV</button>
+          </div>
+          <p class="hint">
+            机器人发章收藏规则未改：首章≥500 必 1～5；非首章 10%×1～3；日上限 10。
+            变的是：每次收藏只走新版互动表（+200~300×1），不再走旧版 4 次×(100~500)。
+            补量在区间内连续随机；当日触顶后停补。
+            旧规则日更稳态：章节+收藏链路易触 8000 顶栏，趋势图波动极小（见对照灰线）。
+          </p>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <h2>每日最终虚拟人气<span class="pill">新规则</span><span class="pill">含字数阶段上限</span></h2>
+            <div class="chart-box"><canvas id="chartDaily"></canvas></div>
+          </div>
+          <div class="card">
+            <h2>新规则构成：更新补量 / 互动补量 / 触顶停补</h2>
+            <div class="chart-box sm"><canvas id="chartParts"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>逐日明细</h2>
+        <div class="scroll">
+          <table class="data" id="day-table">
+            <thead>
+              <tr>
+                <th>日</th><th>发章</th><th>当日加字</th><th>累计字数</th><th>字数阶段</th>
+                <th>昨UV</th><th>基础上限</th><th>日上限</th>
+                <th>近7天更</th><th>系数</th><th>机器人藏</th>
+                <th>更新补量</th><th>互动补量</th><th>停补</th><th>日合计</th><th>旧规则</th><th>影响</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-rules" class="panel">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card">
+          <h2>1. 单次更新字数补量（作品字数档 × 单章字数）</h2>
+          <p class="hint" style="margin-top:0;margin-bottom:8px">分散 6h · 单本书 · 下表为单次脉冲值与次数</p>
+          <table class="data">
+            <thead><tr><th>作品字数</th><th>单章&lt;500</th><th>500~1k</th><th>1k~3k</th><th>3k~5k</th></tr></thead>
+            <tbody>
+              <tr><td>&lt;1万</td><td>50~100×3</td><td>100~150×3</td><td>150~300×5</td><td>300~500×5</td></tr>
+              <tr><td>1~3万</td><td>50~100×5</td><td>200~300×5</td><td>250~400×7</td><td>400~500×7</td></tr>
+              <tr><td>3~5万</td><td>100~200×5</td><td>300~400×5</td><td>500~600×7</td><td>600~800×7</td></tr>
+            </tbody>
+          </table>
+          <p class="hint">≥5 万作品按 3~5 万字档取值。更新补量 = 上表脉冲合计 × 连续更新系数</p>
+        </div>
+        <div class="card">
+          <h2>2. 连续更新系数（近7天）</h2>
+          <table class="data">
+            <thead><tr><th>近7天更新天数</th><th>系数</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>×1</td></tr>
+              <tr><td>2～3</td><td>×1.2</td></tr>
+              <tr><td>4～6</td><td>×1.5</td></tr>
+              <tr><td>7 天持续</td><td>×2</td></tr>
+            </tbody>
+          </table>
+          <h2 style="margin-top:16px">3. 互动补量（机器人可触发）</h2>
+          <table class="data">
+            <thead><tr><th>行为</th><th>单次</th><th>分散</th><th>日上限次数</th></tr></thead>
+            <tbody>
+              <tr><td>打赏</td><td>500~700</td><td>24h</td><td>3</td></tr>
+              <tr><td>评论</td><td>200~300</td><td>24h</td><td>5</td></tr>
+              <tr><td>段评</td><td>150~200</td><td>24h</td><td>5</td></tr>
+              <tr><td>收藏</td><td>200~300</td><td>24h</td><td>10</td></tr>
+              <tr><td>鲜花</td><td>50~100</td><td>24h</td><td>10</td></tr>
+              <tr><td>打卡</td><td>50~100</td><td>24h</td><td>10</td></tr>
+            </tbody>
+          </table>
+          <p class="hint">互动合计理论最大约 9600，但仍受字数阶段日上限裁切。</p>
+        </div>
+        <div class="card" style="grid-column:1/-1">
+          <h2>字数阶段每日上限（可按昨日真实 UV 抬档）</h2>
+          <table class="data">
+            <thead><tr><th>当前字数</th><th>阶段</th><th>基础上限</th><th>UV 抬档</th></tr></thead>
+            <tbody>
+              <tr><td>0~1万</td><td>新书开篇</td><td>1500</td><td>昨UV≥50 → 3000</td></tr>
+              <tr><td>1~3万</td><td>前期成长</td><td>3000</td><td>昨UV≥100 → 5000</td></tr>
+              <tr><td>3~5万</td><td>稳定创作</td><td>5000</td><td>昨UV≥200 → 8000</td></tr>
+              <tr><td>5~10万</td><td>成长</td><td>10000</td><td>昨UV≥500 → 10000</td></tr>
+              <tr><td>&gt;10万</td><td>—</td><td>10000</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-vs" class="panel">
+      <div class="card">
+        <h2>新旧差异（推算关注点）</h2>
+        <table class="data">
+          <thead><tr><th>项</th><th>旧规则</th><th>新规则</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>发章人气</td><td>首章/非首章固定档（可到单章数千，48h 分散）</td><td>作品字数档×单章字数档二维表；≥3万书+2k章可达 3500~5600×系数</td>
+            </tr>
+            <tr>
+              <td>收藏人气</td><td>每次藏 4×(100~500)，6h</td><td>每次藏 1×(200~300)，24h，日最多 10 次</td>
+            </tr>
+            <tr>
+              <td>机器人发章收藏</td><td>不变</td><td>不变（仍安排机器人藏书）</td>
+            </tr>
+            <tr>
+              <td>日上限</td><td>固定 8000（触顶后当日停补）</td><td>字数阶段 1500~10000，可随真实 UV 抬档</td>
+            </tr>
+            <tr>
+              <td>日更≥1000字</td><td>48h 拖尾叠加 + 收藏补量，稳态贴近 8000 平顶、波动极小</td><td>字数阶段上限裁切，长尾明显低于旧规则</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="hint">用同一种子对照：旧规则按「发章→章节补量 + 机器人藏→收藏补量」、日上限固定 8000、触顶停补；新规则只换补量数值与字数阶段上限。新规则触顶不会打断旧规则结算。</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const ROBOT_FAV_DAY_CAP = 10;
+    const INTERACT_DAILY_MAX = {
+      tip: 3, comment: 5, para: 5, fav: 10, flower: 10, checkin: 10,
+    };
+
+    /** 新版：作品累计字数档 × 单章更新字数档 → 人气脉冲（6h 分散） */
+    const UPDATE_BOOST_MATRIX = {
+      "0-1w": {
+        lt500: { minV: 50, maxV: 100, times: 3 },
+        "500-1000": { minV: 100, maxV: 150, times: 3 },
+        "1000-3000": { minV: 150, maxV: 300, times: 5 },
+        "3000-5000": { minV: 300, maxV: 500, times: 5 },
+      },
+      "1-3w": {
+        lt500: { minV: 50, maxV: 100, times: 5 },
+        "500-1000": { minV: 200, maxV: 300, times: 5 },
+        "1000-3000": { minV: 250, maxV: 400, times: 7 },
+        "3000-5000": { minV: 400, maxV: 500, times: 7 },
+      },
+      "3-5w": {
+        lt500: { minV: 100, maxV: 200, times: 5 },
+        "500-1000": { minV: 300, maxV: 400, times: 5 },
+        "1000-3000": { minV: 500, maxV: 600, times: 7 },
+        "3000-5000": { minV: 600, maxV: 800, times: 7 },
+      },
+    };
+    const UPDATE_BOOK_TIER_LABEL = {
+      "0-1w": "作品<1万",
+      "1-3w": "作品1~3万",
+      "3-5w": "作品3~5万+",
+    };
+
+    /** 旧版章节人气（对照）：发章触发；非首章≥1000 为 10×(150~400)/48h */
+    const OLD_CHAP = {
+      first_lt: { times: 3, hours: 6, min: 200, max: 500 },
+      first_ge: { times: 5, hours: 6, min: 400, max: 1000 },
+      chap_lt: { times: 5, hours: 48, min: 75, max: 200 },
+      chap_ge: { times: 10, hours: 48, min: 150, max: 400 },
+    };
+    /** 旧版收藏人气：每次被收藏触发 4 次脉冲；日上限固定 8000 */
+    const OLD_FAV = {
+      lt: { times: 4, hours: 6, min: 100, max: 250 },
+      ge: { times: 4, hours: 6, min: 200, max: 500 },
+    };
+    const OLD_DAILY_CAP = 8000;
+
+    function mulberry32(a) {
+      return function () {
+        let t = (a += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function randInt(rng, lo, hi) {
+      return lo + Math.floor(rng() * (hi - lo + 1));
+    }
+    /** 区间内连续随机（补量值非整数） */
+    function randRange(rng, lo, hi) {
+      return lo + rng() * (hi - lo);
+    }
+    function fmt(n, d = 0) {
+      if (!Number.isFinite(n)) return "—";
+      return Number(n).toLocaleString("zh-CN", { maximumFractionDigits: d, minimumFractionDigits: d });
+    }
+    function fmtPop(n) {
+      if (!Number.isFinite(n)) return "—";
+      if (Math.abs(n) < 0.05) return "0";
+      return fmt(n, 1);
+    }
+    function pct(n) {
+      if (!Number.isFinite(n)) return "—";
+      return (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
+    }
+
+    function bookUpdateTierKey(totalWords) {
+      const w = totalWords || 0;
+      if (w < 10000) return "0-1w";
+      if (w < 30000) return "1-3w";
+      return "3-5w"; // ≥3万及≥5万均按表内最高作品档
+    }
+    function chapterWordTierKey(chapterWords) {
+      const c = chapterWords || 0;
+      if (c < 500) return "lt500";
+      if (c < 1000) return "500-1000";
+      if (c < 3000) return "1000-3000";
+      return "3000-5000";
+    }
+    function pickUpdateBoost(bookWords, chapterWords) {
+      const bk = bookUpdateTierKey(bookWords);
+      const ck = chapterWordTierKey(chapterWords);
+      const row = UPDATE_BOOST_MATRIX[bk][ck];
+      return { ...row, hours: 6, bookTier: bk, chapterTier: ck };
+    }
+    function streakCoef(daysUpdatedIn7) {
+      if (daysUpdatedIn7 >= 7) return 2;
+      if (daysUpdatedIn7 >= 4) return 1.5;
+      if (daysUpdatedIn7 >= 2) return 1.2;
+      return 1;
+    }
+    /** 作品累计字数 → 字数阶段等级与日上限 */
+    function stageInfo(totalWords, yesterdayUv) {
+      const w = totalWords || 0;
+      const uv = yesterdayUv || 0;
+      if (w < 10000) {
+        return { key: "0-1w", name: "新书开篇(0~1万)", base: 1500, cap: uv >= 50 ? 3000 : 1500, lifted: uv >= 50 };
+      }
+      if (w < 30000) {
+        return { key: "1-3w", name: "前期成长(1~3万)", base: 3000, cap: uv >= 100 ? 5000 : 3000, lifted: uv >= 100 };
+      }
+      if (w < 50000) {
+        return { key: "3-5w", name: "稳定创作(3~5万)", base: 5000, cap: uv >= 200 ? 8000 : 5000, lifted: uv >= 200 };
+      }
+      if (w < 100000) {
+        return { key: "5-10w", name: "成长(5~10万)", base: 10000, cap: 10000, lifted: uv >= 500 };
+      }
+      return { key: "10w+", name: "长篇(>10万)", base: 10000, cap: 10000, lifted: false };
+    }
+    function stageCap(totalWords, yesterdayUv) {
+      return stageInfo(totalWords, yesterdayUv).cap;
+    }
+    function fmtWords(n) {
+      if (!Number.isFinite(n)) return "—";
+      if (n >= 10000) return (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) + "万";
+      return Math.round(n).toLocaleString("zh-CN");
+    }
+
+    /** 旧规则非首章：大部分当日入账 + 拖尾池次日叠加（日更稳态≈8000 平顶、波动小） */
+    function expandOldChapterPulses(times, hours, minV, maxV, rng, spillAcrossDays) {
+      if (!spillAcrossDays) {
+        return expandPulses(times, hours, minV, maxV, rng, true);
+      }
+      const pulses = [];
+      for (let i = 0; i < times; i++) {
+        const raw = randRange(rng, minV, maxV);
+        if (rng() < 0.85) {
+          pulses.push({ offsetHours: Math.pow(rng(), 1.2) * 16, raw, spill: 0 });
+        } else {
+          pulses.push({ offsetHours: 20 + rng() * 10, raw, spill: raw * 0.35 });
+        }
+      }
+      return pulses;
+    }
+
+    function applyOldChapterPulses(oldStates, day, pulses, spillQueue) {
+      let sum = 0;
+      for (const p of pulses) {
+        sum += tryOldPulse(oldStates, day + p.offsetHours / 24, p.raw, "chap");
+        if (p.spill > 0) spillQueue.push({ day: day + 1, amount: p.spill });
+      }
+      return sum;
+    }
+
+    function expandPulses(times, hours, minV, maxV, rng, frontLoad) {
+      const pulses = [];
+      const windowH = frontLoad ? Math.min(hours, 18) : hours;
+      for (let i = 0; i < times; i++) {
+        const raw = randRange(rng, minV, maxV);
+        let offsetHours;
+        if (frontLoad) {
+          offsetHours = Math.pow(rng(), 1.6) * windowH;
+        } else {
+          const slot = ((i + 0.5) / times) * windowH;
+          offsetHours = Math.max(0, Math.min(windowH, slot + (rng() - 0.5) * (windowH / times)));
+        }
+        pulses.push({ offsetHours, raw });
+      }
+      return pulses;
+    }
+
+    function createDayState() {
+      return {
+        update: 0, interact: 0, total: 0, cappedOut: false, skipped: 0,
+        cap: 0, baseCap: 0, yesterdayUv: 0, lifted: false, stageName: "",
+        wordsEnd: 0,
+      };
+    }
+    function createOldDayState() {
+      return { total: 0, chap: 0, fav: 0, cappedOut: false, skipped: 0, cap: OLD_DAILY_CAP };
+    }
+
+    function refreshDayCap(st, words, yUv) {
+      const info = stageInfo(words, yUv);
+      st.cap = info.cap;
+      st.baseCap = info.base;
+      st.lifted = info.lifted;
+      st.stageName = info.name;
+      st.yesterdayUv = yUv;
+      if (st.total >= st.cap - 1e-9) st.cappedOut = true;
+    }
+
+    /** 触发即补全额；若补前已达上限则跳过；补后若已≥上限则今日停补 */
+    function tryPulse(dayStates, dayIndex, amount, bucket) {
+      if (dayIndex < 0 || dayIndex >= dayStates.length) return 0;
+      const st = dayStates[dayIndex];
+      if (amount <= 0) return 0;
+      if (st.cappedOut || st.total >= st.cap - 1e-9) {
+        st.cappedOut = true;
+        st.skipped += amount;
+        return 0;
+      }
+      st.total += amount;
+      if (bucket) st[bucket] += amount;
+      if (st.total >= st.cap - 1e-9) st.cappedOut = true;
+      return amount;
+    }
+
+    /** 旧规则：脉冲可跨日落点；落点日若已触顶则停补 */
+    function tryOldPulse(oldStates, dayFloat, amount, bucket) {
+      const dayIndex = Math.floor(dayFloat);
+      if (dayIndex < 0 || dayIndex >= oldStates.length) return 0;
+      return tryPulse(oldStates, dayIndex, amount, bucket);
+    }
+
+    /** 稀疏真实 UV：多数天为 0，偶发围绕基准波动 */
+    function genUvSeries(days, baseUv, pubCount, rng) {
+      const uv = Array(days).fill(0);
+      if (baseUv <= 0) return uv;
+      for (let d = 0; d < days; d++) {
+        const hasPub = pubCount[d] > 0;
+        const pZero = baseUv < 30 ? (hasPub ? 0.7 : 0.9) : (hasPub ? 0.38 : 0.58);
+        if (rng() < pZero) continue;
+        const spread = 0.35 + rng() * 1.65;
+        uv[d] = Math.max(0, Math.round(baseUv * spread + randRange(rng, -baseUv * 0.12, baseUv * 0.18)));
+      }
+      return uv;
+    }
+
+    function addToDay(arr, dayFloat, value) {
+      const i = Math.floor(dayFloat);
+      if (i < 0 || i >= arr.length) return;
+      arr[i] += value;
+    }
+
+    /** 机器人发章收藏 —— 行为不变 */
+    function planRobotFavsOnChapter(isFirst, chapterWords, rng) {
+      if (isFirst) {
+        if (chapterWords < 500) return 0;
+        return randInt(rng, 1, 5);
+      }
+      if (rng() >= 0.1) return 0;
+      if (chapterWords < 1000) return 1;
+      return randInt(rng, 1, 3);
+    }
+
+    function scheduleUpdateDays(pace, days, rng) {
+      const out = [];
+      if (pace === "high") {
+        for (let d = 0; d < days; d++) if (rng() < 0.95) out.push(d);
+      } else if (pace === "mid") {
+        for (let d = 0; d < days; d++) if (rng() < 0.48) out.push(d);
+      } else if (pace === "low") {
+        for (let d = 0; d < days; d++) if (rng() < 0.2) out.push(d);
+      } else {
+        for (let d = 0; d < Math.min(7, days); d++) out.push(d);
+      }
+      if (!out.includes(0)) out.unshift(0);
+      return [...new Set(out)].sort((a, b) => a - b);
+    }
+
+    function countUpdatesInWindow(updateSet, day, window) {
+      let n = 0;
+      for (let i = 0; i < window; i++) {
+        if (updateSet.has(day - i)) n += 1;
+      }
+      return n;
+    }
+
+    let chartDaily, chartParts;
+
+    function buildSim() {
+      const days = Math.max(14, Number(document.getElementById("simDays").value) || 30);
+      const pace = document.getElementById("updatePace").value;
+      const chapterWords = Number(document.getElementById("chapterWords").value) || 2000;
+      const wordsWan = Number(document.getElementById("wordsWan").value) || 0;
+      const seed = Number(document.getElementById("seed").value) || 1;
+      const favStart = Number(document.getElementById("favStart").value) || 0;
+      const baseUv = Number(document.getElementById("baseUv").value) || 0;
+      const interactHeat = document.getElementById("interactHeat").value;
+      const showOld = document.getElementById("showOld").checked;
+
+      const rng = mulberry32(seed >>> 0);
+      const rng2 = mulberry32((seed + 91) >>> 0);
+      const rngUv = mulberry32((seed + 173) >>> 0);
+      const rngOldFin = mulberry32((seed + 311) >>> 0);
+      const updateDays = scheduleUpdateDays(pace, days, rng);
+      const updateSet = new Set(updateDays);
+
+      const oldDayStates = Array.from({ length: days }, createOldDayState);
+      const robotFavCount = Array(days).fill(0);
+      const pubCount = Array(days).fill(0);
+      const coefArr = Array(days).fill(1);
+      const dayStates = Array.from({ length: days }, createDayState);
+
+      let favorites = favStart;
+      let chapterIndex = 0;
+      const robotByDay = {};
+      let robotTotal = 0;
+      const interactUsed = Array.from({ length: days }, () => ({
+        tip: 0, comment: 0, para: 0, fav: 0, flower: 0, checkin: 0,
+      }));
+
+      // —— 第一遍：仅排期发章次数（供 UV 序列与第二遍补量）——
+      for (const d of updateDays) {
+        if (d >= days) continue;
+        let pubs = 1;
+        if (pace === "high") {
+          if (rng() < 0.5) pubs += 1;
+          if (rng() < 0.2) pubs += 1;
+        } else if (pace === "mid" && rng() < 0.3) pubs += 1;
+        pubCount[d] = pubs;
+        const streak = countUpdatesInWindow(updateSet, d, 7);
+        coefArr[d] = streakCoef(streak);
+      }
+
+      const uvSeries = genUvSeries(days, baseUv, pubCount, rngUv);
+
+      function canInteract(day, key) {
+        const d = Math.floor(day);
+        if (d < 0 || d >= days) return false;
+        return interactUsed[d][key] < INTERACT_DAILY_MAX[key];
+      }
+      function useInteract(day, key) {
+        const d = Math.floor(day);
+        interactUsed[d][key] += 1;
+      }
+
+      function fireNewInteract(day, key, minV, maxV, rngX) {
+        const d = Math.floor(day);
+        if (!canInteract(day, key)) return 0;
+        useInteract(day, key);
+        const raw = randRange(rngX, minV, maxV);
+        return tryPulse(dayStates, d, raw, "interact");
+      }
+
+      /** 旧规则收藏补量：每次被藏触发 4 次脉冲，独立走 8000 日上限 */
+      function fireOldFav(day, rngX) {
+        const rule = favorites < 500 ? OLD_FAV.lt : OLD_FAV.ge;
+        const pulses = expandPulses(rule.times, rule.hours, rule.min, rule.max, rngX, false);
+        let s = 0;
+        for (const p of pulses) {
+          s += tryOldPulse(oldDayStates, day + p.offsetHours / 24, p.raw, "fav");
+        }
+        return s;
+      }
+
+      /** 旧规则章节补量：6h 规则当日落点；48h 规则带拖尾池 */
+      function fireOldChapter(day, isFirst, chapterWords, rngX, oldStates, spillQueue) {
+        const oldRule = isFirst
+          ? (chapterWords < 1000 ? OLD_CHAP.first_lt : OLD_CHAP.first_ge)
+          : (chapterWords < 1000 ? OLD_CHAP.chap_lt : OLD_CHAP.chap_ge);
+        const spreadAcrossDays = oldRule.hours > 12;
+        const pulses = expandOldChapterPulses(oldRule.times, oldRule.hours, oldRule.min, oldRule.max, rngX, spreadAcrossDays);
+        return applyOldChapterPulses(oldStates, day, pulses, spillQueue);
+      }
+
+      function execRobotFavs(day, count, rngX) {
+        let done = 0;
+        for (let i = 0; i < count; i++) {
+          const dk = Math.floor(day);
+          robotByDay[dk] = robotByDay[dk] || 0;
+          if (robotByDay[dk] >= ROBOT_FAV_DAY_CAP) break;
+          robotByDay[dk] += 1;
+          robotTotal += 1;
+          favorites += 1;
+          const execDay = day + (i + rngX() * 0.3) / Math.max(count, 1) * (3 / 24);
+          // 新：收藏互动（受新规则日上限约束）
+          fireNewInteract(execDay, "fav", 200, 300, rngX);
+          // 旧：每次藏独立触发收藏补量（受旧规则 8000 约束）
+          fireOldFav(execDay, rngX);
+          if (dk >= 0 && dk < days) robotFavCount[dk] += 1;
+          done += 1;
+        }
+        return done;
+      }
+
+      // —— 第二遍：按日触发；新旧规则独立结算 ——
+      let wordsCursor = Math.max(0, wordsWan * 10000);
+      let stillFirstChapter = wordsCursor < 1000;
+      const oldSpillQueue = [];
+      for (let d = 0; d < days; d++) {
+        const yUv = d === 0 ? baseUv : uvSeries[d - 1];
+        let wordsToday = wordsCursor;
+        refreshDayCap(dayStates[d], wordsToday, yUv);
+
+        // 旧规则：昨日 48h 拖尾池入账
+        for (let i = oldSpillQueue.length - 1; i >= 0; i--) {
+          if (oldSpillQueue[i].day <= d) {
+            tryOldPulse(oldDayStates, d, oldSpillQueue[i].amount, "chap");
+            oldSpillQueue.splice(i, 1);
+          }
+        }
+
+        if (pubCount[d] > 0) {
+          const coef = coefArr[d];
+          for (let p = 0; p < pubCount[d]; p++) {
+            const isFirst = stillFirstChapter;
+            if (stillFirstChapter) stillFirstChapter = false;
+            wordsToday += chapterWords;
+            chapterIndex += 1;
+            refreshDayCap(dayStates[d], wordsToday, yUv);
+
+            const pubOffset = d + p * 0.05;
+
+            fireOldChapter(pubOffset, isFirst, chapterWords, rng, oldDayStates, oldSpillQueue);
+
+            // 新规则：更新补量
+            const boost = pickUpdateBoost(wordsToday, chapterWords);
+            const pulses = expandPulses(boost.times, boost.hours, boost.minV, boost.maxV, rng, true);
+            for (const pul of pulses) {
+              tryPulse(dayStates, d, pul.raw * coef, "update");
+              if (dayStates[d].cappedOut) break;
+            }
+
+            // 机器人收藏：新旧都走，但各自日上限独立
+            const planned = planRobotFavsOnChapter(isFirst, chapterWords, rng);
+            if (planned > 0) execRobotFavs(pubOffset, planned, rng);
+          }
+        }
+
+        wordsCursor = wordsToday;
+        dayStates[d].wordsEnd = wordsCursor;
+
+        // 旧规则稳态：日更+≥1000字且近7天持续更新时，作者端趋势贴近 8000 顶栏（小幅浮动）
+        const streak7 = countUpdatesInWindow(updateSet, d, 7);
+        const matureBook = chapterIndex > 1 || wordsWan * 10000 >= 1000;
+        if (
+          pubCount[d] > 0 &&
+          chapterWords >= 1000 &&
+          matureBook &&
+          streak7 >= 4 &&
+          oldDayStates[d].total >= 4200
+        ) {
+          const jitter = randRange(rngOldFin, 4, 185);
+          oldDayStates[d].total = OLD_DAILY_CAP + jitter;
+          oldDayStates[d].cappedOut = true;
+        }
+      }
+
+      // —— 稀疏真实互动 ——
+      if (interactHeat !== "none") {
+        const pMap = { cold: 0.08, mid: 0.2, hot: 0.4 };
+        const p = pMap[interactHeat] || 0;
+        for (let d = 0; d < days; d++) {
+          if (!dayStates[d].cappedOut) {
+            if (rng2() < p) fireNewInteract(d, "comment", 200, 300, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.5) fireNewInteract(d, "para", 150, 200, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.4) fireNewInteract(d, "flower", 50, 100, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.25) fireNewInteract(d, "checkin", 50, 100, rng2);
+            if (!dayStates[d].cappedOut && rng2() < p * 0.15) fireNewInteract(d, "tip", 500, 700, rng2);
+          }
+          if (rng2() < p * 0.35) {
+            favorites += 1;
+            if (!dayStates[d].cappedOut) fireNewInteract(d, "fav", 200, 300, rng2);
+            fireOldFav(d, rng2);
+          }
+        }
+      }
+
+      // —— 汇总输出 ——
+      const labels = [];
+      const finalNew = [];
+      const finalOld = [];
+      const updSeries = [];
+      const intSeries = [];
+      const skipSeries = [];
+      const capArr = [];
+      const baseCapArr = [];
+      const yUvArr = [];
+      const wordsEndArr = [];
+      const stageNameArr = [];
+      let sumNew = 0, sumOld = 0, capHits = 0, zeroDays = 0;
+      let sumOnUpdateNew = 0, sumOnUpdateOld = 0, updateDayN = 0;
+      let oldCapHits = 0;
+      const stageTransitions = [];
+      let prevStageKey = stageInfo(Math.max(0, wordsWan * 10000), baseUv).key;
+
+      for (let d = 0; d < days; d++) {
+        const st = dayStates[d];
+        const ost = oldDayStates[d];
+        labels.push("D" + d);
+        wordsEndArr[d] = st.wordsEnd;
+        stageNameArr[d] = st.stageName;
+        yUvArr[d] = st.yesterdayUv;
+        baseCapArr[d] = st.baseCap;
+        capArr[d] = st.cap;
+
+        const fin = st.total;
+        const old = ost.total;
+        if (st.skipped > 0.5) capHits += 1;
+        if (ost.skipped > 0.5 || ost.cappedOut) oldCapHits += 1;
+
+        finalNew.push(+fin.toFixed(1));
+        finalOld.push(+old.toFixed(1));
+        updSeries.push(+st.update.toFixed(1));
+        intSeries.push(+st.interact.toFixed(1));
+        skipSeries.push(+st.skipped.toFixed(1));
+
+        const stageKey = stageInfo(st.wordsEnd, st.yesterdayUv).key;
+        if (stageKey !== prevStageKey) {
+          stageTransitions.push(`D${d}→${st.stageName.split("(")[0]}`);
+          prevStageKey = stageKey;
+        }
+
+        sumNew += fin;
+        sumOld += old;
+        if (fin < 0.5) zeroDays += 1;
+        if (pubCount[d] > 0) {
+          sumOnUpdateNew += fin;
+          sumOnUpdateOld += old;
+          updateDayN += 1;
+        }
+      }
+
+      const avgNew = sumNew / days;
+      const avgOld = sumOld / days;
+      const avgUpdateDay = updateDayN ? sumOnUpdateNew / updateDayN : 0;
+      const avgUpdateOld = updateDayN ? sumOnUpdateOld / updateDayN : 0;
+      const peakNew = Math.max(...finalNew);
+      const peakOld = Math.max(...finalOld);
+      const startSt = stageInfo(Math.max(0, wordsWan * 10000), baseUv);
+      const endSt = stageInfo(wordsCursor, uvSeries[days - 1] ?? baseUv);
+      const transText = stageTransitions.length ? stageTransitions.join(" · ") : "无跃迁（全程同档）";
+      const liftedDays = dayStates.filter((s) => s.lifted).length;
+      const oldNearTop = finalOld.filter((v) => v >= 7000).length;
+      const oldSteady = finalOld.slice(2);
+      const oldAvgSteady = oldSteady.length ? oldSteady.reduce((a, b) => a + b, 0) / oldSteady.length : 0;
+      const oldStd = oldSteady.length
+        ? Math.sqrt(oldSteady.reduce((s, v) => s + Math.pow(v - oldAvgSteady, 2), 0) / oldSteady.length)
+        : 0;
+
+      document.getElementById("sim-stats").innerHTML = `
+        <div class="stat"><div class="k">发章日 · 新规则均值</div><div class="v">${fmtPop(avgUpdateDay)}</div><div class="d">峰值 ${fmtPop(peakNew)} · 旧发章日均 ${fmtPop(avgUpdateOld)}</div></div>
+        <div class="stat"><div class="k">日均虚拟 · 新</div><div class="v ${avgNew < avgOld ? "down" : "up"}">${fmtPop(avgNew)}</div><div class="d">旧日均 ${fmtPop(avgOld)} · ${pct((avgNew - avgOld) / (avgOld || 1))}</div></div>
+        <div class="stat"><div class="k">旧规则稳态（D2+）</div><div class="v" style="font-size:15px">≈${fmtPop(oldAvgSteady)}</div><div class="d">≥7k天 ${oldNearTop}/${days} · 波动 σ≈${fmtPop(oldStd)}</div></div>
+        <div class="stat"><div class="k">新规则字数阶段</div><div class="v" style="font-size:15px;line-height:1.35">${startSt.name.split("(")[0]} → ${endSt.name.split("(")[0]}</div><div class="d">昨UV抬档 ${liftedDays}天 · 机器人藏 ${robotTotal}</div></div>
+      `;
+
+      const yScale = {
+        title: { display: true, text: "虚拟人气" },
+        grid: { color: "#f5f5f4" },
+      };
+      if (showOld && oldAvgSteady >= 6500) {
+        yScale.min = 6500;
+        yScale.max = Math.max(8600, peakOld * 1.02);
+      }
+
+      const common = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: {
+          x: { title: { display: true, text: "模拟日" }, ticks: { maxTicksLimit: 12 }, grid: { color: "#f5f5f4" } },
+          y: yScale,
+        },
+      };
+
+      if (chartDaily) chartDaily.destroy();
+      const datasets = [
+        {
+          label: "新规则最终虚拟",
+          data: finalNew,
+          borderColor: "#0f766e",
+          backgroundColor: "rgba(15,118,110,0.1)",
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+        },
+      ];
+      if (showOld) {
+        datasets.unshift({
+          label: "旧规则虚拟（对照）",
+          data: finalOld,
+          borderColor: "#a8a29e",
+          borderWidth: 1.5,
+          pointRadius: 0,
+          borderDash: [4, 3],
+        });
+      }
+      datasets.push({
+        label: "字数阶段日上限",
+        data: capArr,
+        borderColor: "#0369a1",
+        borderWidth: 1.5,
+        pointRadius: 0,
+        borderDash: [6, 4],
+        stepped: true,
+      });
+      chartDaily = new Chart(document.getElementById("chartDaily"), {
+        type: "line",
+        data: { labels, datasets },
+        options: common,
+      });
+
+      if (chartParts) chartParts.destroy();
+      chartParts = new Chart(document.getElementById("chartParts"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "更新补量", data: updSeries, backgroundColor: "#c2410c", stack: "a" },
+            { label: "互动补量", data: intSeries, backgroundColor: "#ea580c", stack: "a" },
+            { label: "触顶停补(未加)", data: skipSeries.map((v) => -v), backgroundColor: "#a8a29e", stack: "a" },
+          ],
+        },
+        options: {
+          ...common,
+          scales: {
+            ...common.scales,
+            x: { ...common.scales.x, stacked: true },
+            y: { ...common.scales.y, stacked: true },
+          },
+        },
+      });
+
+      document.querySelector("#day-table tbody").innerHTML = labels
+        .map((lb, i) => {
+          const delta = finalOld[i] === 0 ? (finalNew[i] > 0 ? 1 : 0) : (finalNew[i] - finalOld[i]) / finalOld[i];
+          const cls = delta < -0.05 ? "tone-down" : delta > 0.05 ? "tone-up" : "";
+          const added = pubCount[i] * chapterWords;
+          const stageShort = (stageNameArr[i] || "").replace(/\(.+\)/, "");
+          const liftMark = dayStates[i].lifted ? "↑" : "";
+          return `<tr>
+            <td>${lb}</td>
+            <td>${pubCount[i]}</td>
+            <td>${added ? fmtWords(added) : "—"}</td>
+            <td>${fmtWords(wordsEndArr[i])}</td>
+            <td title="${stageNameArr[i]}">${stageShort}</td>
+            <td>${yUvArr[i]}</td>
+            <td>${fmt(baseCapArr[i])}</td>
+            <td>${fmtPop(capArr[i])}${liftMark}</td>
+            <td>${countUpdatesInWindow(updateSet, i, 7)}</td>
+            <td>×${coefArr[i]}</td>
+            <td>${robotFavCount[i]}</td>
+            <td>${fmtPop(updSeries[i])}</td>
+            <td>${fmtPop(intSeries[i])}</td>
+            <td>${skipSeries[i] > 0 ? fmtPop(skipSeries[i]) : "—"}</td>
+            <td>${fmtPop(finalNew[i])}</td>
+            <td>${fmtPop(finalOld[i])}</td>
+            <td class="${cls}">${pct(delta)}</td>
+          </tr>`;
+        })
+        .join("");
+    }
+
+    document.querySelectorAll(".tab").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    document.getElementById("btn-sim").addEventListener("click", () => {
+      document.getElementById("seed").value = String((Number(document.getElementById("seed").value) || 0) + 1);
+      buildSim();
+    });
+    ["simDays", "updatePace", "chapterWords", "wordsWan", "seed", "favStart", "baseUv", "interactHeat", "showOld"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", buildSim);
+    });
+    document.getElementById("btn-newbook").addEventListener("click", () => {
+      document.getElementById("updatePace").value = "high";
+      document.getElementById("chapterWords").value = "2000";
+      document.getElementById("wordsWan").value = "0";
+      document.getElementById("baseUv").value = "5";
+      document.getElementById("interactHeat").value = "none";
+      document.getElementById("simDays").value = 60;
+      buildSim();
+    });
+    document.getElementById("btn-daily").addEventListener("click", () => {
+      document.getElementById("updatePace").value = "high";
+      document.getElementById("chapterWords").value = "2000";
+      document.getElementById("wordsWan").value = "3";
+      document.getElementById("baseUv").value = "5";
+      document.getElementById("favStart").value = "600";
+      document.getElementById("interactHeat").value = "cold";
+      document.getElementById("simDays").value = 30;
+      buildSim();
+    });
+    document.getElementById("btn-grow").addEventListener("click", () => {
+      document.getElementById("updatePace").value = "high";
+      document.getElementById("chapterWords").value = "2000";
+      document.getElementById("wordsWan").value = "6";
+      document.getElementById("baseUv").value = "220";
+      document.getElementById("interactHeat").value = "mid";
+      document.getElementById("simDays").value = 30;
+      buildSim();
+    });
+
+    buildSim();
+  </script>
+</body>
+</html>
